@@ -1,8 +1,15 @@
 import { render, screen } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import { AppProvider } from './context/AppContext';
 import App from './App';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test('renders Home title', async () => {
+  render(
+    <BrowserRouter>
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </BrowserRouter>
+  );
+  expect(await screen.findByText(/Home/i)).toBeInTheDocument();
 });
