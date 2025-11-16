@@ -3,63 +3,88 @@ import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 
-const Form = styled.form`
-  max-width: 520px;
-  margin: 32px auto;
-  background: #fff;
-  padding: 24px;
-  border-radius: ${({ theme }) => theme.radii.md};
-  box-shadow: ${({ theme }) => theme.shadow};
+const Wrapper = styled.div`
+  max-width: 400px;
+  margin: 0 auto;
+  padding: ${({ theme }) => theme.spacing(3)};
   display: grid;
-  gap: 12px;
+  gap: 16px;
 `;
 
+const Title = styled.h2``;
+
 const Input = styled.input`
-  padding: 12px;
-  border: 1px solid ${({ theme }) => theme.colors.muted};
-  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 `;
 
 const Button = styled.button`
-  padding: 12px;
+  padding: 8px;
   background: ${({ theme }) => theme.colors.primary};
   color: #fff;
   border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
+  border-radius: 4px;
   cursor: pointer;
-  &:disabled { opacity: .6; }
+  &:disabled { background: #aaa; }
 `;
 
 export default function CreateAdmin() {
   const { state } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
 
-  async function onSubmit(e) { e.preventDefault();
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
     setStatus('');
     try {
       const { client } = await import('../api/client');
       client.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
       await client.post('/auth/register-admin', { email, password });
-      setStatus('Admin account created');
-      setEmail(''); setPassword('');
-    } catch (err) {
-      setStatus('Failed to create admin');
+      setStatus('Admin created successfully');
+      setEmail('');
+      setPassword('');
+    } catch (e) {
+      const code = e?.response?.data?.error;
+      const msg = code === 'user_exists'
+        ? 'Email already registered'
+        : code === 'unauthorized'
+        ? 'Login as admin to create more admins'
+        : code === 'forbidden'
+        ? 'Only admins can create new admins'
+        : 'Failed to create admin';
+      setStatus(msg);
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <Layout>
-      <Form onSubmit={onSubmit} aria-label="Create admin form">
-        <h2>Create Admin Account</h2>
-        <label>Email</label>
-        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <label>Password</label>
-        <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <Button disabled={!state.token}>Create</Button>
-        {status && <div role="alert">{status}</div>}
-      </Form>
+      <Wrapper>
+        <Title>Create Admin Account</Title>
+        <form onSubmit={handleSubmit}>
+          <Input
+            type="email"
+            placeholder="Admin email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <Input
+            type="password"
+            placeholder="Password (min 8 chars)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <Button disabled={loading}>{loading ? 'Creating...' : 'Create Admin'}</Button>
+          {status && <div role="alert" style={{ color: status.includes('Failed') ? 'red' : 'green' }}>{status}</div>}
+        </form>
+      </Wrapper>
     </Layout>
   );
 }

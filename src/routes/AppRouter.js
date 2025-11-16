@@ -13,6 +13,7 @@ const Profile = lazy(() => import('../pages/Profile'));
 const Admin = lazy(() => import('../pages/Admin'));
 const AddSweet = lazy(() => import('../pages/AddSweet'));
 const CreateAdmin = lazy(() => import('../pages/CreateAdmin'));
+const EditSweet = lazy(() => import('../pages/EditSweet'));
 
 export default function AppRouter() {
   return (
@@ -25,6 +26,7 @@ export default function AppRouter() {
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute admin><Admin /></ProtectedRoute>} />
         <Route path="/admin/sweets/new" element={<ProtectedRoute admin><AddSweet /></ProtectedRoute>} />
+        <Route path="/admin/sweets/:id/edit" element={<ProtectedRoute admin><EditSweet /></ProtectedRoute>} />
         <Route path="/admin/users/new" element={<ProtectedRoute admin><CreateAdmin /></ProtectedRoute>} />
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />

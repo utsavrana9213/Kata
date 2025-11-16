@@ -58,11 +58,12 @@ export function AuthProvider({ children }) {
       const { client } = await import('../api/client');
       const res = await client.post('/auth/login', { email, password });
       dispatch({ type: 'remember', payload: !!remember });
-      const user = parseJwt(res.data.token);
-      dispatch({ type: 'login', payload: { token: res.data.token, user: { id: user.sub, role: user.role, email } } });
+      const payload = res.data.user || parseJwt(res.data.token);
+      dispatch({ type: 'login', payload: { token: res.data.token, user: { id: payload.id || payload.sub, role: payload.role, email } } });
       return true;
     } catch (e) {
-      dispatch({ type: 'error', payload: 'Login failed' });
+      const msg = e?.response?.data?.error === 'invalid_credentials' ? 'Invalid email or password' : 'Login failed';
+      dispatch({ type: 'error', payload: msg });
       return false;
     }
   }

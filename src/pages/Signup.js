@@ -41,6 +41,26 @@ export default function Signup() {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const { state, register } = useAuth();
+  const [adminStatus, setAdminStatus] = useState('');
+  async function registerAdmin() {
+    setAdminStatus('');
+    try {
+      const { client } = await import('../api/client');
+      if (state.token) client.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
+      await client.post('/auth/register-admin', { email, password });
+      navigate('/login');
+    } catch (e) {
+      const code = e?.response?.data?.error;
+      const msg = code === 'user_exists'
+        ? 'Email already registered'
+        : code === 'unauthorized'
+        ? 'Login as admin to create more admins'
+        : code === 'forbidden'
+        ? 'Only admins can create new admins'
+        : 'Failed to create admin';
+      setAdminStatus(msg);
+    }
+  }
 
   function validate() {
     const errs = {};
@@ -75,6 +95,10 @@ export default function Signup() {
         <Input type="password" value={confirm} onChange={(e) => { setConfirm(e.target.value); validate(); }} aria-invalid={!!errors.confirm} />
         {errors.confirm && <span role="alert" style={{ color: 'red' }}>{errors.confirm}</span>}
         <Button disabled={state.loading}>{state.loading ? 'Signing up...' : 'Sign Up'}</Button>
+        <Button type="button" onClick={registerAdmin} disabled={state.loading}>
+          Create as Admin
+        </Button>
+        {adminStatus && <div role="alert" style={{ color: 'red' }}>{adminStatus}</div>}
         {state.error && <div role="alert" style={{ color: 'red' }}>{state.error}</div>}
         <div>
           Already have an account? <Link to="/login">Login</Link>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
@@ -42,6 +43,16 @@ export default function Admin() {
     } catch {}
   }
 
+  async function removeProduct(id) {
+    try {
+      if (!window.confirm('Delete this sweet?')) return;
+      const { client } = await import('../api/client');
+      client.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
+      await client.delete(`/sweets/${id}`);
+      setSweets(prev => prev.filter(s => s._id !== id));
+    } catch {}
+  }
+
   function sortBy(field) {
     if (sort === field) setDir(dir === 'asc' ? 'desc' : 'asc'); else setSort(field);
   }
@@ -72,7 +83,7 @@ export default function Admin() {
         <Panel>
           <h3>Product Inventory Management</h3>
           <div style={{ marginBottom: 12 }}>
-            <a href="/admin/sweets/new">Add New Sweet</a>
+            <Link to="/admin/sweets/new">Add New Sweet</Link>
           </div>
           <Table aria-label="Products table">
             <thead>
@@ -81,6 +92,7 @@ export default function Admin() {
                 <th onClick={() => sortBy('category')}>Category</th>
                 <th onClick={() => sortBy('price')}>Price</th>
                 <th onClick={() => sortBy('quantity')}>Quantity</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -90,6 +102,10 @@ export default function Admin() {
                   <td>{s.category}</td>
                   <td>${s.price.toFixed(2)}</td>
                   <td>{s.quantity}</td>
+                  <td>
+                    <Link to={`/admin/sweets/${s._id}/edit`} style={{ marginRight: 12 }}>Edit</Link>
+                    <button onClick={() => removeProduct(s._id)} aria-label={`Delete ${s.name}`}>Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 
 const Form = styled.form`
-  max-width: 520px;
+  max-width: 620px;
   margin: 32px auto;
   background: #fff;
   padding: 24px;
@@ -30,7 +31,10 @@ const Button = styled.button`
   &:disabled { opacity: .6; }
 `;
 
-export default function AddSweet() {
+export default function EditSweet() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { state } = useAuth();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Candy');
   const [price, setPrice] = useState('');
@@ -38,32 +42,32 @@ export default function AddSweet() {
   const [imageUrl, setImageUrl] = useState('');
   const [ingredients, setIngredients] = useState('');
   const [descHtml, setDescHtml] = useState('');
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
-  const { state } = useAuth();
 
-  function validate() {
-    const errs = {};
-    if (!name.trim()) errs.name = 'Name is required';
-    if (!category.trim()) errs.category = 'Category is required';
-    const p = parseFloat(price);
-    if (!(p >= 0)) errs.price = 'Valid price required';
-    const q = parseInt(quantity, 10);
-    if (!(q >= 0)) errs.quantity = 'Valid quantity required';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    try {
+      const { client } = await import('../api/client');
+      client.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
+      const res = await client.get(`/sweets`, { params: { page: 1, limit: 1, name: '' } });
+      const { client: c } = await import('../api/client');
+      c.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
+      const item = (await c.get(`/sweets/search`, { params: { name: '' } })).data.items.find(x => x._id === id);
+      if (item) {
+        setName(item.name); setCategory(item.category); setPrice(String(item.price)); setQuantity(String(item.quantity));
+        setImageUrl(item.imageUrl || ''); setIngredients((item.ingredients || []).join(', ')); setDescHtml(item.description || '');
+      }
+    } catch {}
   }
 
   async function onSubmit(e) { e.preventDefault();
     setStatus('');
-    if (!validate()) return;
-    setLoading(true);
     try {
       const { client } = await import('../api/client');
       client.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
       const ing = ingredients.split(',').map(s => s.trim()).filter(Boolean);
-      await client.post('/sweets', {
+      await client.put(`/sweets/${id}`, {
         name,
         category,
         price: parseFloat(price),
@@ -72,37 +76,31 @@ export default function AddSweet() {
         ingredients: ing,
         imageUrl
       });
-      setStatus('Sweet created successfully');
-      setName(''); setPrice(''); setQuantity(''); setImageUrl(''); setIngredients(''); setDescHtml(''); setErrors({});
-    } catch (err) {
-      setStatus('Failed to create sweet');
-    } finally { setLoading(false); }
+      setStatus('Sweet updated');
+      navigate('/admin');
+    } catch { setStatus('Update failed'); }
   }
 
   return (
     <Layout>
-      <Form onSubmit={onSubmit} aria-label="Add sweet form">
-        <h2>Add Sweet</h2>
+      <Form onSubmit={onSubmit} aria-label="Edit sweet form">
+        <h2>Edit Sweet</h2>
         <label>Name</label>
-        <Input value={name} onChange={(e) => { setName(e.target.value); validate(); }} aria-invalid={!!errors.name} required />
-        {errors.name && <span role="alert" style={{ color: 'red' }}>{errors.name}</span>}
+        <Input value={name} onChange={(e) => setName(e.target.value)} required />
         <label>Category</label>
-        <select value={category} onChange={(e) => { setCategory(e.target.value); validate(); }} aria-invalid={!!errors.category}>
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
           <option>Candy</option>
           <option>Chocolate</option>
           <option>Sugar</option>
         </select>
-        {errors.category && <span role="alert" style={{ color: 'red' }}>{errors.category}</span>}
         <label>Price</label>
-        <Input type="number" step="0.01" value={price} onChange={(e) => { setPrice(e.target.value); validate(); }} aria-invalid={!!errors.price} required />
-        {errors.price && <span role="alert" style={{ color: 'red' }}>{errors.price}</span>}
+        <Input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required />
         <label>Quantity</label>
-        <Input type="number" value={quantity} onChange={(e) => { setQuantity(e.target.value); validate(); }} aria-invalid={!!errors.quantity} required />
-        {errors.quantity && <span role="alert" style={{ color: 'red' }}>{errors.quantity}</span>}
+        <Input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
         <label>Image URL</label>
-        <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
+        <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
         <label>Ingredients (comma separated)</label>
-        <Input value={ingredients} onChange={(e) => setIngredients(e.target.value)} placeholder="sugar, cocoa, milk" />
+        <Input value={ingredients} onChange={(e) => setIngredients(e.target.value)} />
         <label>Description</label>
         <div style={{ border: '1px solid #ddd', borderRadius: 6 }}>
           <div style={{ display: 'flex', gap: 8, padding: 8 }}>
@@ -114,10 +112,10 @@ export default function AddSweet() {
             contentEditable
             style={{ minHeight: 120, padding: 12 }}
             onInput={(e) => setDescHtml(e.currentTarget.innerHTML)}
-            aria-label="Description editor"
+            dangerouslySetInnerHTML={{ __html: descHtml }}
           />
         </div>
-        <Button disabled={!state.token || loading}>{loading ? 'Creating...' : 'Create'}</Button>
+        <Button>Save</Button>
         {status && <div role="alert">{status}</div>}
       </Form>
     </Layout>
