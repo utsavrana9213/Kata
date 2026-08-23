@@ -41,6 +41,7 @@ class Service {
   final String? instagram;
   final String? linkedin;
   final String? slug;
+  final String? membershipTier;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -83,16 +84,93 @@ class Service {
     this.instagram,
     this.linkedin,
     this.slug,
+    this.membershipTier,
     this.createdAt,
     this.updatedAt,
   });
 
-  bool get isPremium => (price ?? 0) > premiumPriceThreshold;
+  /// Prefer the server's membership value. Price is only a legacy fallback.
+  bool get isPremium {
+    final tier = (membershipTier ?? '').trim().toLowerCase();
+    if (tier.isNotEmpty) {
+      return tier == 'premium' || tier == '1' || tier == 'true';
+    }
+    return (price ?? 0) > premiumPriceThreshold;
+  }
 
   String? get priceTier {
-    final p = price;
-    if (p == null) return null;
-    return p > premiumPriceThreshold ? 'Premium' : 'Standard';
+    if (price == null && (membershipTier ?? '').trim().isEmpty) {
+      return null;
+    }
+    return isPremium ? 'Premium' : 'Standard';
+  }
+
+  String? get localAssetImage {
+    return assetForLabel(
+      [
+        serviceName,
+        companyName,
+        categorys ?? '',
+        subcategory ?? '',
+        description ?? '',
+        shortDescription ?? '',
+      ].join(' '),
+    );
+  }
+
+  static String? assetForLabel(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('hospital') ||
+        l.contains('clinic') ||
+        l.contains('doctor') ||
+        l.contains('medical')) {
+      return 'assets/images/hospitals.gif';
+    }
+    if (l.contains('cater') ||
+        l.contains('food') ||
+        l.contains('restaurant') ||
+        l.contains('bar')) {
+      return 'assets/images/catering.gif';
+    }
+    if (l.contains('banquet') ||
+        l.contains('marriage') ||
+        l.contains('wedding') ||
+        l.contains('event')) {
+      return 'assets/images/marriage.gif';
+    }
+    if (l.contains('resort') ||
+        l.contains('villa') ||
+        l.contains('house') ||
+        l.contains('estate') ||
+        l.contains('property') ||
+        l.contains('real estate')) {
+      return 'assets/images/big_house.gif';
+    }
+    if (l.contains('packer') ||
+        l.contains('mover') ||
+        l.contains('shift') ||
+        l.contains('truck')) {
+      return 'assets/images/packers.gif';
+    }
+    if (l.contains('adventure') ||
+        l.contains('explore') ||
+        l.contains('tour') ||
+        l.contains('travel')) {
+      return 'assets/images/girl_exploring.gif';
+    }
+    if (l.contains('spa') ||
+        l.contains('salon') ||
+        l.contains('massage') ||
+        l.contains('beauty') ||
+        l.contains('hair')) {
+      return 'assets/images/massage.gif';
+    }
+    if (l.contains('courier') ||
+        l.contains('delivery') ||
+        l.contains('scooter')) {
+      return 'assets/images/scooter.png';
+    }
+    return null;
   }
 
   factory Service.fromJson(Map<String, dynamic> json) {
@@ -101,14 +179,31 @@ class Service {
         // The keys must match your PHP JSON output EXACTLY
         id: json['id']?.toString() ?? '',
         userId: json['user_id']?.toString(),
-        companyName: (json['companyname'] ?? json['company_name'] ?? 'Unknown Company').toString(),
-        serviceName: (json['servicename'] ?? json['service_name'] ?? 'Unknown Service').toString(),
+        companyName: (json['companyname'] ?? json['company_name'] ?? '')
+            .toString()
+            .trim(),
+        serviceName: (json['servicename'] ?? json['service_name'] ?? '')
+            .toString()
+            .trim(),
         locations: json['locations']?.toString(),
-        categorys: (json['category_id'] ?? json['categorys'] ?? json['category'] ?? json['categories'])?.toString(),
-        subcategory: json['subcategory']?.toString(),
+        categorys:
+            (json['category_id'] ??
+                    json['categorys'] ??
+                    json['category'] ??
+                    json['categories'])
+                ?.toString(),
+        subcategory:
+            (json['subcategory_name'] ??
+                    json['subname'] ??
+                    json['sub_category_name'] ??
+                    json['subcategory'])
+                ?.toString(),
         price: _parseDouble(json['price']),
         perPrice: json['perprice']?.toString(),
-        allHour: json['allhour'] == '1' || json['allhour'] == 1 || json['allhour'] == true,
+        allHour:
+            json['allhour'] == '1' ||
+            json['allhour'] == 1 ||
+            json['allhour'] == true,
         ofPrice: _parseDouble(json['ofprice']),
         percen: _parseInt(json['percen']),
         workingDays: json['workingdays']?.toString(),
@@ -127,18 +222,37 @@ class Service {
         lati: _parseDouble(json['lati']),
         lngi: _parseDouble(json['lngi']),
         plist: json['plist']?.toString(),
-        isActive: json['is_active'] == '1' || json['is_active'] == 1 || json['is_active'] == true,
+        isActive:
+            json['is_active'] == '1' ||
+            json['is_active'] == 1 ||
+            json['is_active'] == true,
         avrRat: _parseDouble(json['avr_rat']),
         viewsCont: _parseInt(json['viewscont']),
         email: json['email']?.toString(),
-        website: json['website']?.toString(),
+        website:
+            (json['website'] ??
+                    json['bwebsite'] ??
+                    json['businesswebsite'] ??
+                    json['business_website'])
+                ?.toString(),
         facebook: json['facebook']?.toString(),
         twitter: json['twitter']?.toString(),
         instagram: json['instagram']?.toString(),
         linkedin: json['linkedin']?.toString(),
         slug: json['slug']?.toString(),
-        createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
-        updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'].toString()) : null,
+        membershipTier:
+            (json['vendor_tier'] ??
+                    json['membership_tier'] ??
+                    json['tier'] ??
+                    json['plist'] ??
+                    json['is_premium'])
+                ?.toString(),
+        createdAt: json['created_at'] != null
+            ? DateTime.tryParse(json['created_at'].toString())
+            : null,
+        updatedAt: json['updated_at'] != null
+            ? DateTime.tryParse(json['updated_at'].toString())
+            : null,
       );
     } catch (e) {
       rethrow;

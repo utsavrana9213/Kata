@@ -11,11 +11,44 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
+class _ProfilePageState extends State<ProfilePage>
+    with SingleTickerProviderStateMixin {
+  static const Color _darkBackground = Color(0xFF0D1218);
+  static const Color _darkSurface = Color(0xFF1B2836);
+  static const Color _darkField = Color(0xFF151F2A);
+  static const Color _darkTextPrimary = Color(0xFFEAF2FC);
+  static const Color _darkTextSecondary = Color(0xFFB4C3D5);
+  static const Color _darkBrandBlue = Color(0xFF75AFFF);
+
   Map<String, dynamic>? _currentUser;
   bool _isLoading = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
+  Color get _pageBackground =>
+      _isDarkMode ? _darkBackground : AppPalette.softBlendBackground;
+  Color get _cardSurface => _isDarkMode ? _darkSurface : Colors.white;
+  Color get _fieldSurface => _isDarkMode ? _darkField : Colors.white;
+  Color get _textPrimary =>
+      _isDarkMode ? _darkTextPrimary : AppPalette.deepBlue;
+  Color get _textSecondary =>
+      _isDarkMode ? _darkTextSecondary : AppPalette.deepBlue.withAlpha(150);
+  Color get _brandColor =>
+      _isDarkMode ? _darkBrandBlue : AppPalette.fusionPurple;
+  Color get _borderColor => _isDarkMode
+      ? Colors.white.withAlpha(24)
+      : AppPalette.deepBlue.withAlpha(26);
+  Color get _shadowColor => _isDarkMode
+      ? Colors.black.withAlpha(70)
+      : AppPalette.fusionPurple.withAlpha(14);
+  List<Color> get _headerGradientColors => _isDarkMode
+      ? const [Color(0xFF111D2A), Color(0xFF152536), Color(0xFF102018)]
+      : const [
+          AppPalette.softBlendBackground,
+          AppPalette.lightBlueTint,
+          AppPalette.lightPinkTint,
+        ];
 
   @override
   void initState() {
@@ -38,10 +71,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final result = await ApiService().getCurrentUser();
-      
+
       if (mounted) {
         if (result['status'] == 'success' && result['user'] != null) {
           setState(() {
@@ -56,9 +89,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading user data: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading user data: $e')));
       }
     }
   }
@@ -68,7 +101,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('Sign Out'),
           content: const Text('Are you sure you want to sign out?'),
           actions: [
@@ -79,7 +114,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                
+
                 await ApiService().logout();
                 if (!mounted) return;
                 Navigator.of(this.context).pushAndRemoveUntil(
@@ -104,6 +139,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: _cardSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -123,6 +159,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: _textPrimary,
               ),
             ),
             const SizedBox(height: 16),
@@ -131,7 +168,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             ElevatedButton(
               onPressed: onSave,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
+                backgroundColor: _brandColor,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -154,7 +191,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   void _editMobile() {
-    final controller = TextEditingController(text: _currentUser?['mobile'] ?? '');
+    final controller = TextEditingController(
+      text: _currentUser?['mobile'] ?? '',
+    );
     _showEditDialog(
       title: 'Edit Mobile Number',
       fields: [
@@ -176,10 +215,14 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   void _editAddress() {
-    final addressCtrl = TextEditingController(text: _currentUser?['address'] ?? '');
+    final addressCtrl = TextEditingController(
+      text: _currentUser?['address'] ?? '',
+    );
     final cityCtrl = TextEditingController(text: _currentUser?['city'] ?? '');
     final stateCtrl = TextEditingController(text: _currentUser?['state'] ?? '');
-    final pincodeCtrl = TextEditingController(text: _currentUser?['pincode'] ?? '');
+    final pincodeCtrl = TextEditingController(
+      text: _currentUser?['pincode'] ?? '',
+    );
 
     _showEditDialog(
       title: 'Edit Address',
@@ -242,7 +285,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   Future<void> _updateProfile(Map<String, dynamic> data) async {
     setState(() => _isLoading = true);
     final result = await ApiService().updateProfile(data);
-    
+
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['status'] == 'success') {
@@ -252,7 +295,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         _loadUserData();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Failed to update profile')),
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to update profile'),
+          ),
         );
       }
     }
@@ -266,14 +311,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     bool showEditButton = false,
     VoidCallback? onEdit,
   }) {
+    final effectiveIconColor = _isDarkMode
+        ? _brandColor
+        : iconColor ?? AppPalette.fusionPurple;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppPalette.deepBlue.withAlpha(26)),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
-            color: AppPalette.fusionPurple.withAlpha(14),
+            color: _shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 6),
           ),
@@ -285,10 +333,12 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (iconColor ?? AppPalette.fusionPurple).withAlpha(24),
+              color: (_isDarkMode ? _darkField : effectiveIconColor).withAlpha(
+                _isDarkMode ? 255 : 24,
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconColor ?? AppPalette.fusionPurple, size: 22),
+            child: Icon(icon, color: effectiveIconColor, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -299,7 +349,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   title,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: AppPalette.deepBlue.withAlpha(140),
+                    color: _textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -309,7 +359,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppPalette.deepBlue,
+                    color: _textPrimary,
                   ),
                 ),
               ],
@@ -321,7 +371,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               icon: const Icon(Icons.edit, size: 18),
               label: const Text('Edit'),
               style: FilledButton.styleFrom(
-                foregroundColor: AppPalette.fusionPurple,
+                backgroundColor: _isDarkMode ? _darkField : null,
+                foregroundColor: _brandColor,
               ),
             ),
         ],
@@ -345,7 +396,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppPalette.deepBlue,
+              color: _textPrimary,
             ),
           ),
         ),
@@ -365,10 +416,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     final city = _currentUser?['city'] ?? '';
     final state = _currentUser?['state'] ?? '';
     final pincode = _currentUser?['pincode'] ?? '';
-    
-    final fullAddress = [address, city, state, pincode]
-        .where((element) => element.toString().isNotEmpty)
-        .join(', ');
+
+    final fullAddress = [
+      address,
+      city,
+      state,
+      pincode,
+    ].where((element) => element.toString().isNotEmpty).join(', ');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +437,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppPalette.deepBlue,
+                  color: _textPrimary,
                 ),
               ),
             ],
@@ -399,10 +453,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           )
         else
           Padding(
-             padding: const EdgeInsets.symmetric(horizontal: 16),
-             child: Text('No address added yet', style: GoogleFonts.poppins(color: Colors.grey)),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'No address added yet',
+              style: GoogleFonts.poppins(color: _textSecondary),
+            ),
           ),
-          
+
         if (city.toString().isNotEmpty)
           _buildInfoCard(
             icon: Icons.location_city,
@@ -439,7 +496,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppPalette.deepBlue,
+              color: _textPrimary,
             ),
           ),
         ),
@@ -464,15 +521,16 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_currentUser == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          title: Text(
+            'Profile',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          ),
           centerTitle: true,
         ),
         body: Center(
@@ -501,16 +559,23 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.login),
                 label: const Text('Go to Login'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: AppPalette.fusionPurple,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
@@ -520,25 +585,23 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     }
 
     return Scaffold(
+      backgroundColor: _pageBackground,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 120,
             floating: false,
             pinned: true,
-            backgroundColor: Colors.white,
-            foregroundColor: AppPalette.deepBlue,
+            backgroundColor: _isDarkMode ? _darkSurface : Colors.white,
+            foregroundColor: _textPrimary,
+            surfaceTintColor: Colors.transparent,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppPalette.softBlendBackground,
-                      AppPalette.lightBlueTint,
-                      AppPalette.lightPinkTint,
-                    ],
+                    colors: _headerGradientColors,
                   ),
                 ),
                 child: SafeArea(
@@ -550,13 +613,13 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                         children: [
                           CircleAvatar(
                             radius: 28,
-                            backgroundColor: Colors.white,
+                            backgroundColor: _fieldSurface,
                             child: Text(
                               _currentUser!['name'][0].toUpperCase(),
                               style: GoogleFonts.poppins(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: AppPalette.fusionPurple,
+                                color: _brandColor,
                               ),
                             ),
                           ),
@@ -571,7 +634,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   style: GoogleFonts.poppins(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
-                                    color: AppPalette.deepBlue,
+                                    color: _textPrimary,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -580,7 +643,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                   (_currentUser!['email'] ?? '').toString(),
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
-                                    color: AppPalette.deepBlue.withAlpha(150),
+                                    color: _textSecondary,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -594,7 +657,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                             icon: const Icon(Icons.edit, size: 18),
                             label: const Text('Edit'),
                             style: FilledButton.styleFrom(
-                              foregroundColor: AppPalette.fusionPurple,
+                              backgroundColor: _isDarkMode
+                                  ? _darkField
+                                  : Colors.white.withAlpha(220),
+                              foregroundColor: _brandColor,
                             ),
                           ),
                         ],
@@ -628,7 +694,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           foregroundColor: Colors.red,
                           side: BorderSide(color: Colors.red.shade300),
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -644,11 +712,16 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   void _openQuickEdit() {
-    final nameCtrl = TextEditingController(text: _currentUser?['name']?.toString() ?? '');
+    final nameCtrl = TextEditingController(
+      text: _currentUser?['name']?.toString() ?? '',
+    );
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      backgroundColor: _cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -660,18 +733,26 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Quick Edit', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: AppPalette.deepBlue)),
+            Text(
+              'Quick Edit',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: _textPrimary,
+              ),
+            ),
             const SizedBox(height: 12),
             TextFormField(
               controller: nameCtrl,
+              style: GoogleFonts.poppins(color: _textPrimary),
               decoration: InputDecoration(
                 labelText: 'Name',
                 prefixIcon: const Icon(Icons.person),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: _fieldSurface,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppPalette.deepBlue.withAlpha(28)),
+                  borderSide: BorderSide(color: _borderColor),
                 ),
                 focusedBorder: const OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -691,8 +772,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     icon: const Icon(Icons.phone),
                     label: const Text('Edit Mobile'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppPalette.fusionPurple,
-                      side: BorderSide(color: AppPalette.fusionPurple.withAlpha(120)),
+                      foregroundColor: _brandColor,
+                      side: BorderSide(color: _brandColor.withAlpha(150)),
                     ),
                   ),
                 ),
@@ -706,8 +787,8 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     icon: const Icon(Icons.location_on),
                     label: const Text('Edit Address'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppPalette.fusionPurple,
-                      side: BorderSide(color: AppPalette.fusionPurple.withAlpha(120)),
+                      foregroundColor: _brandColor,
+                      side: BorderSide(color: _brandColor.withAlpha(150)),
                     ),
                   ),
                 ),
@@ -719,7 +800,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 Navigator.pop(ctx);
                 await _updateProfile({'name': nameCtrl.text});
               },
-              style: FilledButton.styleFrom(backgroundColor: AppPalette.fusionPurple),
+              style: FilledButton.styleFrom(backgroundColor: _brandColor),
               child: const Text('Save'),
             ),
             const SizedBox(height: 8),
@@ -728,5 +809,4 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       ),
     );
   }
-
 }

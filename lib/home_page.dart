@@ -11,14 +11,16 @@ import 'package:servekeen/profile_page.dart';
 import 'package:servekeen/category_services_page.dart';
 import 'package:servekeen/data/hierarchy_repository.dart';
 import 'package:servekeen/service_detail_page.dart';
-import 'package:servekeen/subcategory_map_page.dart';
 import 'package:servekeen/my_services_page.dart';
+import 'package:servekeen/near_me_page.dart';
 import 'package:servekeen/vendor_profile_page.dart';
 import 'package:servekeen/vendor_statistics_page.dart';
 import 'package:video_player/video_player.dart';
 import 'package:servekeen/add_service_page.dart';
 import 'package:servekeen/theme/palette.dart';
+import 'package:servekeen/vendor_filters.dart';
 import 'package:flutter/services.dart';
+import 'package:servekeen/main.dart' show setAppThemeMode;
 
 class ChatTurn {
   final String role;
@@ -62,6 +64,10 @@ class _SupportTicketSheetState extends State<_SupportTicketSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? const Color(0xFF1B2836) : Colors.grey[50]!;
+    final textPrimary = isDark ? const Color(0xFFEAF2FC) : AppPalette.deepBlue;
+    final border = isDark ? Colors.white.withAlpha(24) : Colors.grey[200]!;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -73,15 +79,22 @@ class _SupportTicketSheetState extends State<_SupportTicketSheet> {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(color: border),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Open Ticket', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700)),
+              Text(
+                'Open Ticket',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: textPrimary,
+                ),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: _subjectController,
@@ -111,7 +124,12 @@ class _SupportTicketSheetState extends State<_SupportTicketSheet> {
                           final message = _messageController.text.trim();
                           if (subject.isEmpty || message.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter subject and message'), backgroundColor: Colors.red),
+                              const SnackBar(
+                                content: Text(
+                                  'Please enter subject and message',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
                             );
                             return;
                           }
@@ -126,15 +144,31 @@ class _SupportTicketSheetState extends State<_SupportTicketSheet> {
                           if (!context.mounted) return;
                           setState(() => _sending = false);
                           if (res['status'] == 'success') {
-                            Navigator.pop(context, {'subject': subject, 'message': message});
+                            Navigator.pop(context, {
+                              'subject': subject,
+                              'message': message,
+                            });
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text((res['message'] ?? 'Failed to send ticket').toString()), backgroundColor: Colors.red),
+                              SnackBar(
+                                content: Text(
+                                  (res['message'] ?? 'Failed to send ticket')
+                                      .toString(),
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
                             );
                           }
                         },
                   icon: _sending
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.send),
                   label: const Text('Send'),
                 ),
@@ -155,34 +189,32 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   static const int _tabHome = 0;
   static const int _tabSell = 1;
   static const int _tabChat = 2;
   static const int _tabProfile = 3;
 
-  static const Color _cDeepBlue = Color(0xFF1E3A8A);
-  static const Color _cFusionPurple = Color(0xFF7C3AED);
-  static const Color _cElegantPink = Color(0xFFEC4899);
-  static const Color _cSoftBlendBackground = Color(0xFFF5F3FF);
-  static const Color _cLightPinkTint = Color(0xFFFCE7F3);
-  static const Color _cLightBlueTint = Color(0xFFE0F2FE);
-
-  static const List<String> _homeCategoryGifAssets = [
-    'assets/images/food.gif',
-    'assets/images/marriage.gif',
-    'assets/images/hospitals.gif',
-    'assets/images/house.gif',
-    'assets/images/truck.gif',
-    'assets/images/route.gif',
-    'assets/images/hair.gif',
-  ];
+  static const Color _cDeepBlue = AppPalette.darkNavy;
+  static const Color _cFusionPurple = AppPalette.primaryBlue;
+  static const Color _cElegantPink = AppPalette.primaryGreen;
+  static const Color _cSoftBlendBackground = AppPalette.softBlendBackground;
+  static const Color _cLightPinkTint = AppPalette.lightPinkTint;
+  static const Color _cLightBlueTint = AppPalette.lightBlueTint;
+  static const Color _cDarkSurface = Color(0xFF121212);
+  static const Color _cDarkElevatedSurface = Color(0xFF1E1E1E);
+  static const Color _cDarkMutedSurface = Color(0xFF262626);
+  static const Color _cDarkTextPrimary = Color(0xFFEAF2FC);
+  static const Color _cDarkTextSecondary = Color(0xFFB4C3D5);
+  static const Color _cDarkBrandBlue = Color(0xFF75AFFF);
 
   int _navIndex = 0;
   final Duration _rotationInterval = const Duration(seconds: 5);
   late final PageController _carouselController;
   int _carouselIndex = 0;
   Timer? _autoScrollTimer;
+  final ScrollController _brandScrollController = ScrollController();
+  Timer? _brandAutoScrollTimer;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
@@ -190,24 +222,29 @@ class _HomePageState extends State<HomePage> {
   List<Service> _searchResults = [];
   bool _isSearching = false;
   bool _showPremiumOnly = false;
-  final int _notificationCount = 3;
+  int _notificationCount = 3;
   VideoPlayerController? _videoController;
   bool _videoMuted = false;
   final GlobalKey<FormState> _sellerFormKey = GlobalKey<FormState>();
   final TextEditingController _sellerNameController = TextEditingController();
   final TextEditingController _sellerEmailController = TextEditingController();
-  final TextEditingController _sellerPasswordController = TextEditingController();
+  final TextEditingController _sellerPasswordController =
+      TextEditingController();
   final TextEditingController _sellerMobileController = TextEditingController();
-  final TextEditingController _sellerBusinessNameController = TextEditingController();
-  final TextEditingController _sellerBusinessWebsiteController = TextEditingController();
-  final TextEditingController _sellerAddressController = TextEditingController();
+  final TextEditingController _sellerBusinessNameController =
+      TextEditingController();
+  final TextEditingController _sellerBusinessWebsiteController =
+      TextEditingController();
+  final TextEditingController _sellerAddressController =
+      TextEditingController();
   final TextEditingController _sellerCityController = TextEditingController();
   final TextEditingController _sellerStateController = TextEditingController();
-  final TextEditingController _sellerPincodeController = TextEditingController();
+  final TextEditingController _sellerPincodeController =
+      TextEditingController();
   bool _sellerSubmitting = false;
   final bool _sellerCompleted = false;
   bool _sellerRequestSubmitted = false;
-  
+
   // Mock data instead of Supabase stream
   final List<Service> _services = [];
   final Map<String, String> _categoryNameById = {};
@@ -227,9 +264,32 @@ class _HomePageState extends State<HomePage> {
   List<String> carouselImages = [];
   List<String> brandLogos = [];
 
+  bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
+  Color get _appBarSurface => _isDarkMode ? _cDarkSurface : Colors.white;
+  Color get _navSurface => _isDarkMode ? const Color(0xFF0A0F15) : Colors.white;
+  Color get _cardSurface =>
+      _isDarkMode ? _cDarkElevatedSurface : Colors.white.withAlpha(235);
+  Color get _fieldSurface => _isDarkMode ? _cDarkSurface : Colors.white;
+  Color get _subtleSurface =>
+      _isDarkMode ? _cDarkMutedSurface : _cLightBlueTint;
+  Color get _textPrimary => _isDarkMode ? _cDarkTextPrimary : _cDeepBlue;
+  Color get _textSecondary =>
+      _isDarkMode ? _cDarkTextSecondary : _cDeepBlue.withAlpha(150);
+  Color get _textMuted =>
+      _isDarkMode ? _cDarkTextSecondary.withAlpha(180) : Colors.black54;
+  Color get _borderColor =>
+      _isDarkMode ? Colors.white.withAlpha(24) : _cDeepBlue.withAlpha(28);
+  Color get _brandColor => _isDarkMode ? _cDarkBrandBlue : _cFusionPurple;
+  Color get _softShadow =>
+      _isDarkMode ? Colors.black.withAlpha(70) : _cFusionPurple.withAlpha(16);
+  List<Color> get _pageGradientColors => _isDarkMode
+      ? const [Colors.black, Colors.black, Colors.black]
+      : const [_cSoftBlendBackground, _cLightBlueTint, _cLightPinkTint];
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _carouselController = PageController();
     _startAutoScroll();
     _searchController.addListener(_onSearchChanged);
@@ -237,7 +297,10 @@ class _HomePageState extends State<HomePage> {
     _initVideo();
     _prefillSellerForm();
     final initial = widget.initialTab;
-    if (initial == _tabHome || initial == _tabSell || initial == _tabChat || initial == _tabProfile) {
+    if (initial == _tabHome ||
+        initial == _tabSell ||
+        initial == _tabChat ||
+        initial == _tabProfile) {
       _navIndex = initial;
     }
     final u = ApiService().currentUser;
@@ -248,7 +311,8 @@ class _HomePageState extends State<HomePage> {
       _chatHistory.add(
         ChatTurn(
           role: 'ai',
-          content: "Hello! I'm your Servekeen assistant.\n\nType a service name like:\n• spa\n• catering\n• hospital\n• car rental\n\nI'll find matching services for you!",
+          content:
+              "Hello! I'm your Servekeen assistant.\n\nType a service name like:\n• spa\n• catering\n• hospital\n• car rental\n\nI'll find matching services for you!",
         ),
       );
     }
@@ -262,13 +326,17 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       if (text != null && text.trim().isNotEmpty) {
         _searchController.text = text;
-        _searchController.selection = TextSelection.fromPosition(TextPosition(offset: _searchController.text.length));
+        _searchController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _searchController.text.length),
+        );
         _onSearchChanged();
       }
     } on PlatformException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Voice search unavailable: ${e.message ?? 'Error'}')),
+        SnackBar(
+          content: Text('Voice search unavailable: ${e.message ?? 'Error'}'),
+        ),
       );
     } finally {
       if (mounted) setState(() => _voiceInProgress = false);
@@ -281,37 +349,47 @@ class _HomePageState extends State<HomePage> {
         _isLoading = true;
         _errorMessage = null;
       });
-      
+
       final data = await ApiService().fetchAppData();
-      
+      await HierarchyRepository().init();
+      final offlineServices = HierarchyRepository().getAllServices();
+
       if (mounted) {
         setState(() {
           // 1. Services
-           if (data['services'] != null) {
-             try {
-               debugPrint("Services found: ${(data['services'] as List).length}");
-               _services.clear();
-               
-               // Parse services one by one to catch individual errors
-               for (var serviceJson in (data['services'] as List)) {
-                 try {
-                   final service = Service.fromJson(serviceJson);
-                   _services.add(service);
-                 } catch (e) {
-                   debugPrint("Error parsing individual service: $e");
-                   debugPrint("Problematic service data: $serviceJson");
-                   // Continue with other services
-                 }
-               }
-               
-               debugPrint("Successfully loaded ${_services.length} services");
-             } catch (e) {
-               debugPrint("Error processing services list: $e");
-             }
-           } else {
-             debugPrint("No 'services' key in API response or it is null");
-           }
-          
+          if (data['services'] != null) {
+            try {
+              debugPrint(
+                "Services found: ${(data['services'] as List).length}",
+              );
+              _services.clear();
+
+              // Parse services one by one to catch individual errors
+              for (var serviceJson in (data['services'] as List)) {
+                try {
+                  final service = Service.fromJson(serviceJson);
+                  if (service.companyName.isNotEmpty &&
+                      service.serviceName.isNotEmpty) {
+                    _services.add(service);
+                  }
+                } catch (e) {
+                  debugPrint("Error parsing individual service: $e");
+                  debugPrint("Problematic service data: $serviceJson");
+                  // Continue with other services
+                }
+              }
+
+              debugPrint("Successfully loaded ${_services.length} services");
+            } catch (e) {
+              debugPrint("Error processing services list: $e");
+            }
+          } else {
+            debugPrint("No 'services' key in API response or it is null");
+          }
+          // The public endpoint occasionally returns a partial/empty payload.
+          // Keep the packaged, validated catalogue as a read-only fallback.
+          if (_services.isEmpty) _services.addAll(offlineServices);
+
           // 2. Categories
           if (data['categories'] != null) {
             _categoryNameById.clear();
@@ -319,7 +397,9 @@ class _HomePageState extends State<HomePage> {
             for (final c in rawCats) {
               if (c is Map) {
                 final id = (c['id'] ?? '').toString().trim();
-                final name = (c['category_name'] ?? c['name'] ?? '').toString().trim();
+                final name = (c['category_name'] ?? c['name'] ?? '')
+                    .toString()
+                    .trim();
                 if (id.isNotEmpty && name.isNotEmpty) {
                   _categoryNameById[id] = name;
                 }
@@ -331,22 +411,27 @@ class _HomePageState extends State<HomePage> {
               if (imgPath.isNotEmpty && !imgPath.startsWith('http')) {
                 imgPath = "https://servekeen.com/$imgPath";
               }
-              
+
               return {
                 'id': (e['id'] ?? '').toString(),
-                'label': (e['category_name'] ?? e['name'] ?? 'Unknown').toString(),
-                'image': imgPath.isNotEmpty ? imgPath : 'assets/images/display1.jpg',
-                'is_network': imgPath.isNotEmpty
+                'label': (e['category_name'] ?? e['name'] ?? 'Unknown')
+                    .toString(),
+                'image': imgPath.isNotEmpty
+                    ? imgPath
+                    : 'assets/images/display1.jpg',
+                'is_network': imgPath.isNotEmpty,
               };
             }).toList();
           }
 
           // 3. Banners (Carousel)
           if (data['banners'] != null) {
-             final banners = (data['banners'] as List);
-             if (banners.isNotEmpty) {
-               carouselImages = banners.map((e) => "https://servekeen.com/${e['imgfold']}").toList();
-             }
+            final banners = (data['banners'] as List);
+            if (banners.isNotEmpty) {
+              carouselImages = banners
+                  .map((e) => "https://servekeen.com/${e['imgfold']}")
+                  .toList();
+            }
           }
 
           // 4. Brands
@@ -362,7 +447,7 @@ class _HomePageState extends State<HomePage> {
             'assets/images/tata.png',
             'assets/images/yahama.png',
           ];
-          
+
           _isLoading = false;
         });
       }
@@ -392,13 +477,30 @@ class _HomePageState extends State<HomePage> {
         setState(() {});
       }
     });
+    _brandAutoScrollTimer?.cancel();
+    _brandAutoScrollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted || !_brandScrollController.hasClients) return;
+      final max = _brandScrollController.position.maxScrollExtent;
+      if (max <= 0) return;
+      final next = _brandScrollController.offset + 120 >= max
+          ? 0.0
+          : _brandScrollController.offset + 120;
+      _brandScrollController.animateTo(
+        next,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
+    _brandAutoScrollTimer?.cancel();
     _searchDebounce?.cancel();
     _carouselController.dispose();
+    _brandScrollController.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _chatController.dispose();
@@ -414,6 +516,18 @@ class _HomePageState extends State<HomePage> {
     _sellerStateController.dispose();
     _sellerPincodeController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final controller = _videoController;
+    if (controller == null || !controller.value.isInitialized) return;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      controller.pause();
+    } else if (state == AppLifecycleState.resumed && _navIndex == _tabHome) {
+      controller.play();
+    }
   }
 
   void _onSearchChanged() {
@@ -436,41 +550,75 @@ class _HomePageState extends State<HomePage> {
     try {
       final results = await ApiService().searchServices(query, limit: 20);
       if (!mounted) return;
+      var filtered = _rankAndFilterServices(results, query);
+      if (filtered.isEmpty && _services.isNotEmpty) {
+        filtered = _performLocalSearch(query);
+      }
       setState(() {
-        _searchResults = results;
+        _searchResults = filtered;
         _isSearching = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isSearching = false);
-      debugPrint('Search error: $e');
+      final fallback = _performLocalSearch(query);
+      setState(() {
+        _searchResults = fallback;
+        _isSearching = false;
+      });
+      debugPrint('Search error, used local fallback: $e');
     }
   }
 
-  bool _serviceMatchesQuery(Service s, String q) {
-    if (q.isEmpty) return true;
-    final name = s.serviceName.toLowerCase();
-    final company = s.companyName.toLowerCase();
-    final locations = (s.locations ?? '').toLowerCase();
-    final address = (s.address ?? '').toLowerCase();
-    final desc = (s.description ?? '').toLowerCase();
-    final shortDesc = (s.shortDescription ?? '').toLowerCase();
-    final categoryLabel = _categoryNameById[(s.categorys ?? '').trim()]?.toLowerCase() ?? '';
+  List<Service> _performLocalSearch(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return [];
+    final terms = q.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    return _services.where((s) {
+      final catName = (_categoryNameById[s.categorys] ?? '').toLowerCase();
+      final haystack = [
+        s.companyName.toLowerCase(),
+        s.serviceName.toLowerCase(),
+        (s.subcategory ?? '').toLowerCase(),
+        catName,
+        (s.locations ?? '').toLowerCase(),
+        (s.address ?? '').toLowerCase(),
+        (s.shortDescription ?? '').toLowerCase(),
+        (s.description ?? '').toLowerCase(),
+      ].join(' ');
+      return terms.every((t) => haystack.contains(t));
+    }).toList();
+  }
 
-    return name.contains(q) ||
-        company.contains(q) ||
-        locations.contains(q) ||
-        address.contains(q) ||
-        desc.contains(q) ||
-        shortDesc.contains(q) ||
-        categoryLabel.contains(q);
+  List<Service> _rankAndFilterServices(List<Service> raw, String query) {
+    final filtered = rankRelevantServices(
+      raw,
+      query,
+      tier: _showPremiumOnly ? VendorTier.premium : VendorTier.standard,
+      categoryNames: _categoryNameById,
+    );
+    if (filtered.isNotEmpty) return filtered;
+    // If tier guard filtered out all matches, return raw matching services
+    final q = query.trim().toLowerCase();
+    return raw.where((s) {
+      final catName = (_categoryNameById[s.categorys] ?? '').toLowerCase();
+      final haystack = [
+        s.companyName.toLowerCase(),
+        s.serviceName.toLowerCase(),
+        (s.subcategory ?? '').toLowerCase(),
+        catName,
+        (s.locations ?? '').toLowerCase(),
+        (s.address ?? '').toLowerCase(),
+      ].join(' ');
+      return haystack.contains(q);
+    }).toList();
   }
 
   List<Service> _filteredServices() {
     final q = _searchQuery;
-    final base = _showPremiumOnly ? _services.where((s) => s.isPremium).toList() : _services;
-    if (q.isEmpty) return base;
-    return _searchResults;
+    if (q.isNotEmpty) return _searchResults;
+    return _services
+        .where((s) => _showPremiumOnly ? s.isPremium : true)
+        .toList();
   }
 
   void _prefillSellerForm() {
@@ -478,9 +626,11 @@ class _HomePageState extends State<HomePage> {
     if (u == null) return;
     _sellerNameController.text = (u['name'] ?? '').toString();
     _sellerEmailController.text = (u['email'] ?? '').toString();
-    _sellerMobileController.text = (u['mobile'] ?? u['number'] ?? u['phone'] ?? '').toString();
+    _sellerMobileController.text =
+        (u['mobile'] ?? u['number'] ?? u['phone'] ?? '').toString();
     _sellerBusinessNameController.text = (u['businessname'] ?? '').toString();
-    _sellerBusinessWebsiteController.text = (u['bwebsite'] ?? u['businesswebsite'] ?? '').toString();
+    _sellerBusinessWebsiteController.text =
+        (u['bwebsite'] ?? u['businesswebsite'] ?? '').toString();
     _sellerAddressController.text = (u['address'] ?? '').toString();
     _sellerCityController.text = (u['city'] ?? '').toString();
     _sellerStateController.text = (u['state'] ?? '').toString();
@@ -492,11 +642,12 @@ class _HomePageState extends State<HomePage> {
       final c = VideoPlayerController.asset('assets/images/video.mp4');
       await c.initialize();
       c.setLooping(true);
-      c.setVolume(1.0);
+      c.setVolume(0.0);
       await c.play();
       if (mounted) {
         setState(() {
           _videoController = c;
+          _videoMuted = true;
         });
       }
     } catch (_) {}
@@ -526,13 +677,22 @@ class _HomePageState extends State<HomePage> {
   Widget _buildBottomNav() {
     return BottomNavigationBar(
       currentIndex: _navIndex,
+      backgroundColor: _navSurface,
       type: BottomNavigationBarType.fixed,
+      elevation: _isDarkMode ? 0 : 8,
       onTap: (index) => setState(() => _navIndex = index),
-      selectedItemColor: _cFusionPurple,
-      unselectedItemColor: _cDeepBlue.withAlpha(140),
+      selectedItemColor: _brandColor,
+      unselectedItemColor: _isDarkMode
+          ? _cDarkTextSecondary.withAlpha(150)
+          : _cDeepBlue.withAlpha(140),
+      selectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      unselectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500),
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.storefront_outlined), label: 'Sell'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.storefront_outlined),
+          label: 'Sell',
+        ),
         BottomNavigationBarItem(icon: Icon(Icons.smart_toy), label: 'AI Chat'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
       ],
@@ -540,7 +700,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _roleOf(Map<String, dynamic> u) {
-    final raw = (u['role'] ?? u['user_role'] ?? u['type'] ?? '').toString().trim().toLowerCase();
+    final raw = (u['role'] ?? u['user_role'] ?? u['type'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
     if (raw.isNotEmpty) return raw;
     return 'user';
   }
@@ -550,21 +713,17 @@ class _HomePageState extends State<HomePage> {
     final isSmall = size.width < 600;
     final queryActive = _searchQuery.isNotEmpty;
     final results = queryActive ? _filteredServices() : const <Service>[];
-    
+
     return Stack(
       children: [
         Positioned.fill(
           child: IgnorePointer(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    _cSoftBlendBackground,
-                    _cLightBlueTint,
-                    _cLightPinkTint,
-                  ],
+                  colors: _pageGradientColors,
                 ),
               ),
             ),
@@ -573,7 +732,7 @@ class _HomePageState extends State<HomePage> {
         Positioned.fill(
           child: IgnorePointer(
             child: Opacity(
-              opacity: 0.06,
+              opacity: _isDarkMode ? 0.045 : 0.06,
               child: CustomPaint(painter: DotGridPainter()),
             ),
           ),
@@ -592,14 +751,32 @@ class _HomePageState extends State<HomePage> {
                         child: _isSearching
                             ? Row(
                                 children: [
-                                  SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _cFusionPurple)),
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: _cFusionPurple,
+                                    ),
+                                  ),
                                   const SizedBox(width: 8),
-                                  Text('Searching...', style: GoogleFonts.poppins(fontWeight: FontWeight.w500, fontSize: 14, color: _cDeepBlue)),
+                                  Text(
+                                    'Searching...',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                      color: _textPrimary,
+                                    ),
+                                  ),
                                 ],
                               )
                             : Text(
                                 'Results (${results.length})',
-                                style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14, color: _cDeepBlue),
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  color: _textPrimary,
+                                ),
                               ),
                       ),
                       TextButton(
@@ -608,10 +785,15 @@ class _HomePageState extends State<HomePage> {
                             : () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => AllServicesPage(services: results)),
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        AllServicesPage(services: results),
+                                  ),
                                 );
                               },
-                        style: TextButton.styleFrom(foregroundColor: _cFusionPurple),
+                        style: TextButton.styleFrom(
+                          foregroundColor: _cFusionPurple,
+                        ),
                         child: const Text('See all'),
                       ),
                     ],
@@ -628,9 +810,17 @@ class _HomePageState extends State<HomePage> {
                   child: results.isEmpty
                       ? Padding(
                           padding: const EdgeInsets.only(top: 36),
-                          child: Center(child: Text('No services found', style: GoogleFonts.poppins(color: Colors.black54))),
+                          child: Center(
+                            child: Text(
+                              'No services found',
+                              style: GoogleFonts.poppins(color: _textMuted),
+                            ),
+                          ),
                         )
-                      : _buildServicesPreviewGrid(context, results.take(12).toList()),
+                      : _buildServicesPreviewGrid(
+                          context,
+                          results.take(12).toList(),
+                        ),
                 ),
               if (queryActive) const SizedBox(height: 24),
               if (!queryActive)
@@ -641,7 +831,14 @@ class _HomePageState extends State<HomePage> {
               if (!queryActive)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Text('Categories', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16, color: _cDeepBlue)),
+                  child: Text(
+                    'Categories',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: _textPrimary,
+                    ),
+                  ),
                 ),
               if (!queryActive) const SizedBox(height: 8),
               if (!queryActive)
@@ -659,7 +856,14 @@ class _HomePageState extends State<HomePage> {
               if (!queryActive)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Text('Top Brands', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16, color: _cDeepBlue)),
+                  child: Text(
+                    'Top Brands',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: _textPrimary,
+                    ),
+                  ),
                 ),
               if (!queryActive) const SizedBox(height: 8),
               if (!queryActive)
@@ -673,15 +877,30 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
                   child: Row(
                     children: [
-                      Expanded(child: Text('Recommended Services', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16, color: _cDeepBlue))),
+                      Expanded(
+                        child: Text(
+                          'Recommended Services',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            color: _textPrimary,
+                          ),
+                        ),
+                      ),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => AllServicesPage(services: _filteredServices())),
+                            MaterialPageRoute(
+                              builder: (context) => AllServicesPage(
+                                services: _filteredServices(),
+                              ),
+                            ),
                           );
                         },
-                        style: TextButton.styleFrom(foregroundColor: _cFusionPurple),
+                        style: TextButton.styleFrom(
+                          foregroundColor: _cFusionPurple,
+                        ),
                         child: const Text('See all'),
                       ),
                     ],
@@ -691,15 +910,21 @@ class _HomePageState extends State<HomePage> {
               if (!queryActive)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: _buildServicesPreviewGrid(context, _filteredServices().take(6).toList()),
+                  child: _buildServicesPreviewGrid(
+                    context,
+                    _filteredServices().take(6).toList(),
+                  ),
                 ),
               if (!queryActive) const SizedBox(height: 16),
-              if (!queryActive)
+              if (!queryActive &&
+                  _filteredServices().any((service) => service.isPremium))
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
                   child: _buildPremiumSection(context),
                 ),
-              if (!queryActive) const SizedBox(height: 16),
+              if (!queryActive &&
+                  _filteredServices().any((service) => service.isPremium))
+                const SizedBox(height: 16),
               if (!queryActive)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -715,7 +940,11 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildServicesPreviewGrid(BuildContext context, List<Service> items) {
     final width = MediaQuery.of(context).size.width;
-    final crossAxisCount = width < 480 ? 2 : width < 900 ? 3 : 4;
+    final crossAxisCount = width < 480
+        ? 2
+        : width < 900
+        ? 3
+        : 4;
 
     if (items.isEmpty) {
       return const Center(child: Text('No services found.'));
@@ -735,21 +964,37 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHorizontalServicesSection(BuildContext context, String title, List<Service> preview, List<Service> allList) {
+  Widget _buildHorizontalServicesSection(
+    BuildContext context,
+    String title,
+    List<Service> preview,
+    List<Service> allList,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            Expanded(child: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16, color: _cDeepBlue))),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: _textPrimary,
+                ),
+              ),
+            ),
             TextButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => AllServicesPage(services: allList)),
+                  MaterialPageRoute(
+                    builder: (_) => AllServicesPage(services: allList),
+                  ),
                 );
               },
-              style: TextButton.styleFrom(foregroundColor: _cFusionPurple),
+              style: TextButton.styleFrom(foregroundColor: _brandColor),
               child: const Text('See all'),
             ),
           ],
@@ -758,14 +1003,22 @@ class _HomePageState extends State<HomePage> {
         SizedBox(
           height: 210,
           child: preview.isEmpty
-              ? const Center(child: Text('No services found'))
+              ? Center(
+                  child: Text(
+                    'No services found',
+                    style: GoogleFonts.poppins(color: _textMuted),
+                  ),
+                )
               : ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: preview.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final s = preview[index];
-                    return SizedBox(width: 160, child: _ServiceCard(service: s));
+                    return SizedBox(
+                      width: 160,
+                      child: _ServiceCard(service: s),
+                    );
                   },
                 ),
         ),
@@ -777,24 +1030,37 @@ class _HomePageState extends State<HomePage> {
     final all = _filteredServices().where((s) => s.isPremium).toList();
     all.sort((a, b) => ((b.price ?? 0).compareTo(a.price ?? 0)));
     final preview = all.take(6).toList();
-    return _buildHorizontalServicesSection(context, 'Premium Services', preview, all);
+    return _buildHorizontalServicesSection(
+      context,
+      'Premium Services',
+      preview,
+      all,
+    );
   }
 
   Widget _buildTopRatedSection(BuildContext context) {
     final all = List<Service>.from(_filteredServices());
     all.sort((a, b) => ((b.avrRat ?? 0).compareTo(a.avrRat ?? 0)));
     final preview = all.take(6).toList();
-    return _buildHorizontalServicesSection(context, 'Top Rated Services', preview, all);
+    return _buildHorizontalServicesSection(
+      context,
+      'Top Rated Services',
+      preview,
+      all,
+    );
   }
 
   PreferredSizeWidget _buildTopNavAppBar(BuildContext context) {
     return AppBar(
       elevation: 0,
-      backgroundColor: Colors.white,
+      scrolledUnderElevation: 0,
+      backgroundColor: _appBarSurface,
       centerTitle: true,
       automaticallyImplyLeading: false,
-      systemOverlayStyle: SystemUiOverlayStyle.dark,
-      foregroundColor: _cDeepBlue,
+      systemOverlayStyle: _isDarkMode
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
+      foregroundColor: _textPrimary,
       bottom: _navIndex != _tabHome
           ? null
           : PreferredSize(
@@ -805,13 +1071,17 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
       title: SizedBox(
-        height: 30,
+        height: 32,
         child: Image.asset(
           'assets/images/top_img.png',
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) => Text(
             'SERVEKEEN',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: _cFusionPurple),
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: _isDarkMode ? Colors.white : _cFusionPurple,
+            ),
           ),
         ),
       ),
@@ -820,11 +1090,24 @@ class _HomePageState extends State<HomePage> {
         onPressed: () => _scaffoldKey.currentState?.openDrawer(),
       ),
       actions: [
+        IconButton(
+          tooltip: 'Toggle dark mode',
+          icon: Icon(
+            Theme.of(context).brightness == Brightness.dark
+                ? Icons.light_mode_outlined
+                : Icons.dark_mode_outlined,
+          ),
+          onPressed: () => setAppThemeMode(
+            Theme.of(context).brightness == Brightness.dark
+                ? ThemeMode.light
+                : ThemeMode.dark,
+          ),
+        ),
         Stack(
           children: [
             IconButton(
               icon: const Icon(Icons.notifications_none),
-              onPressed: () {},
+              onPressed: () => _showNotifications(context),
             ),
             if (_notificationCount > 0)
               Positioned(
@@ -832,10 +1115,17 @@ class _HomePageState extends State<HomePage> {
                 top: 8,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: _cElegantPink, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: _cElegantPink,
+                    shape: BoxShape.circle,
+                  ),
                   child: Text(
                     '$_notificationCount',
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -847,19 +1137,32 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHeaderHero(BuildContext context) {
     final premiumToggle = Material(
-      color: Colors.white,
+      color: _fieldSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(999),
-        side: BorderSide(color: _cDeepBlue.withAlpha(28)),
+        side: BorderSide(color: _borderColor),
       ),
       child: Padding(
         padding: const EdgeInsets.only(left: 10, right: 6, top: 6, bottom: 6),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.workspace_premium, size: 16, color: _cElegantPink),
+            Icon(
+              _showPremiumOnly
+                  ? Icons.workspace_premium
+                  : Icons.verified_outlined,
+              size: 16,
+              color: _showPremiumOnly ? _cElegantPink : _cFusionPurple,
+            ),
             const SizedBox(width: 6),
-            Text('Premium', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: _cDeepBlue)),
+            Text(
+              _showPremiumOnly ? 'Premium' : 'Standard',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _textPrimary,
+              ),
+            ),
             const SizedBox(width: 6),
             Transform.scale(
               scale: 0.85,
@@ -877,8 +1180,10 @@ class _HomePageState extends State<HomePage> {
 
     final nearMeButton = FilledButton.icon(
       onPressed: () {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening categories...')));
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const CategoriesPage()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NearMePage()),
+        );
       },
       style: FilledButton.styleFrom(
         backgroundColor: _cFusionPurple,
@@ -886,17 +1191,20 @@ class _HomePageState extends State<HomePage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
       icon: const Icon(Icons.near_me, size: 18),
-      label: Text('Near me', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+      label: Text(
+        'Near me',
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      ),
     );
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(235),
+        color: _cardSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _cDeepBlue.withAlpha(20)),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
-            color: _cFusionPurple.withAlpha(16),
+            color: _softShadow,
             blurRadius: 16,
             offset: const Offset(0, 10),
           ),
@@ -913,6 +1221,75 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _showNotifications(BuildContext context) async {
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: _cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        final items = const [
+          (
+            'New premium vendors available',
+            'Explore highlighted services near you.',
+          ),
+          (
+            'Complete your profile',
+            'Add contact details for faster vendor responses.',
+          ),
+          ('Need help?', 'Open AI Chat or send an enquiry from the Sell tab.'),
+        ];
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Notifications',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (items.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: Text('You are all caught up.')),
+                  ),
+                ...items.map(
+                  (item) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundColor: _subtleSurface,
+                      child: Icon(Icons.notifications_none, color: _brandColor),
+                    ),
+                    title: Text(
+                      item.$1,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        color: _textPrimary,
+                      ),
+                    ),
+                    subtitle: Text(
+                      item.$2,
+                      style: GoogleFonts.poppins(color: _textSecondary),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (mounted) setState(() => _notificationCount = 0);
+  }
+
   Drawer _buildLeftDrawer() {
     final u = ApiService().currentUser;
     final name = (u?['name'] ?? 'Guest').toString();
@@ -924,15 +1301,11 @@ class _HomePageState extends State<HomePage> {
           Positioned.fill(
             child: IgnorePointer(
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      _cSoftBlendBackground,
-                      _cLightBlueTint,
-                      _cLightPinkTint,
-                    ],
+                    colors: _pageGradientColors,
                   ),
                 ),
               ),
@@ -941,7 +1314,7 @@ class _HomePageState extends State<HomePage> {
           Positioned.fill(
             child: IgnorePointer(
               child: Opacity(
-                opacity: 0.06,
+                opacity: _isDarkMode ? 0.045 : 0.06,
                 child: CustomPaint(painter: DotGridPainter()),
               ),
             ),
@@ -954,12 +1327,12 @@ class _HomePageState extends State<HomePage> {
                   margin: const EdgeInsets.all(12),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(235),
+                    color: _cardSurface,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _cFusionPurple.withAlpha(26)),
+                    border: Border.all(color: _borderColor),
                     boxShadow: [
                       BoxShadow(
-                        color: _cFusionPurple.withAlpha(16),
+                        color: _softShadow,
                         blurRadius: 16,
                         offset: const Offset(0, 10),
                       ),
@@ -969,13 +1342,13 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       CircleAvatar(
                         radius: 22,
-                        backgroundColor: Colors.white,
+                        backgroundColor: _fieldSurface,
                         child: Text(
                           name.isEmpty ? 'U' : name[0].toUpperCase(),
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: _cFusionPurple,
+                            color: _brandColor,
                           ),
                         ),
                       ),
@@ -984,20 +1357,42 @@ class _HomePageState extends State<HomePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: _cDeepBlue)),
+                            Text(
+                              name,
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w700,
+                                color: _textPrimary,
+                              ),
+                            ),
                             if (email.isNotEmpty)
-                              Text(email, style: GoogleFonts.poppins(fontSize: 12, color: _cDeepBlue.withAlpha(150))),
+                              Text(
+                                email,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: _textSecondary,
+                                ),
+                              ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _cLightBlueTint,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: _cDeepBlue.withAlpha(24)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                        child: Text(role, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: _cDeepBlue)),
+                        decoration: BoxDecoration(
+                          color: _subtleSurface,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: _borderColor),
+                        ),
+                        child: Text(
+                          role,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _textPrimary,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1012,25 +1407,40 @@ class _HomePageState extends State<HomePage> {
                       }),
                       _drawerTile(Icons.explore, 'Explore', () {
                         Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesPage()));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CategoriesPage(),
+                          ),
+                        );
                       }),
                       _drawerTile(Icons.info_outline, 'Why Servekeen', () {
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                        _showWhyServekeen(context);
                       }),
-                      _drawerTile(Icons.contact_support_outlined, 'Enquire Us', () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon')));
-                      }),
-                      _drawerTile(Icons.storefront_outlined, 'Sell on Servekeen', () {
-                        Navigator.pop(context);
-                        setState(() => _navIndex = _tabSell);
-                      }),
+                      _drawerTile(
+                        Icons.contact_support_outlined,
+                        'Enquire Us',
+                        () {
+                          Navigator.pop(context);
+                          _openSupportTicketSheet(context, 'Enquire Us');
+                        },
+                      ),
+                      _drawerTile(
+                        Icons.storefront_outlined,
+                        'Sell on Servekeen',
+                        () {
+                          Navigator.pop(context);
+                          setState(() => _navIndex = _tabSell);
+                        },
+                      ),
                       _drawerTile(Icons.logout, 'Sign Out', () async {
                         await ApiService().logout();
                         if (mounted) {
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
                             (route) => false,
                           );
                         }
@@ -1047,8 +1457,100 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _drawerTile(IconData icon, String title, VoidCallback onTap, {bool isDestructive = false}) {
-    final color = isDestructive ? Colors.red : _cFusionPurple;
+  Future<void> _showWhyServekeen(BuildContext context) async {
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: _cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        final points = const [
+          (
+            'Verified local discovery',
+            'Find service vendors by category, location, and rating.',
+          ),
+          (
+            'Standard and premium options',
+            'Switch between value-focused and premium listings.',
+          ),
+          (
+            'Quick contact paths',
+            'Call, email, open websites, social profiles, or directions from one page.',
+          ),
+          (
+            'Vendor tools',
+            'Sellers can publish, manage, and track service listings.',
+          ),
+        ];
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Why Servekeen',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...points.map(
+                  (p) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.check_circle,
+                          color: _cElegantPink,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                p.$1,
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w700,
+                                  color: _textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                p.$2,
+                                style: GoogleFonts.poppins(
+                                  color: _textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _drawerTile(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool isDestructive = false,
+  }) {
+    final color = isDestructive ? Colors.red : _brandColor;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -1056,19 +1558,31 @@ class _HomePageState extends State<HomePage> {
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withAlpha(235),
+          color: _cardSurface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _cDeepBlue.withAlpha(22)),
+          border: Border.all(color: _borderColor),
           boxShadow: [
-            BoxShadow(color: _cFusionPurple.withAlpha(12), blurRadius: 12, offset: const Offset(0, 8)),
+            BoxShadow(
+              color: _softShadow,
+              blurRadius: 12,
+              offset: const Offset(0, 8),
+            ),
           ],
         ),
         child: Row(
           children: [
             Icon(icon, color: color),
             const SizedBox(width: 12),
-            Expanded(child: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: _cDeepBlue))),
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: _textPrimary,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right, color: _textSecondary),
           ],
         ),
       ),
@@ -1078,17 +1592,26 @@ class _HomePageState extends State<HomePage> {
   Widget _buildSearchBar(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _fieldSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _cDeepBlue.withAlpha(28)),
+        border: Border.all(color: _borderColor),
       ),
       child: TextField(
         controller: _searchController,
+        style: GoogleFonts.poppins(color: _textPrimary),
         decoration: InputDecoration(
           hintText: 'Search services',
-          hintStyle: GoogleFonts.poppins(color: _cDeepBlue.withAlpha(130), fontSize: 14),
-          prefixIcon: Icon(Icons.search, color: _cDeepBlue.withAlpha(160)),
-          suffixIconConstraints: const BoxConstraints(minHeight: 40, minWidth: 40),
+          hintStyle: GoogleFonts.poppins(
+            color: _isDarkMode
+                ? _cDarkTextSecondary.withAlpha(170)
+                : _cDeepBlue.withAlpha(130),
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(Icons.search, color: _textSecondary),
+          suffixIconConstraints: const BoxConstraints(
+            minHeight: 40,
+            minWidth: 40,
+          ),
           suffixIcon: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1098,23 +1621,34 @@ class _HomePageState extends State<HomePage> {
                     _searchController.clear();
                     FocusScope.of(context).unfocus();
                   },
-                  icon: Icon(Icons.close, color: _cDeepBlue.withAlpha(160)),
+                  icon: Icon(Icons.close, color: _textSecondary),
                 ),
               IconButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Scan – coming soon')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Scan – coming soon')),
+                  );
                 },
-                icon: Icon(Icons.qr_code_scanner_outlined, color: _cDeepBlue.withAlpha(160)),
+                icon: Icon(
+                  Icons.qr_code_scanner_outlined,
+                  color: _textSecondary,
+                ),
               ),
               IconButton(
                 onPressed: _startVoiceSearch,
-                icon: Icon(_voiceInProgress ? Icons.mic : Icons.mic_none, color: _cFusionPurple),
+                icon: Icon(
+                  _voiceInProgress ? Icons.mic : Icons.mic_none,
+                  color: _brandColor,
+                ),
               ),
               const SizedBox(width: 4),
             ],
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
         ),
       ),
     );
@@ -1123,12 +1657,20 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCarouselCard(BuildContext context, bool isSmall) {
     final total = 1 + carouselImages.length;
     if (total == 0) {
-      return const SizedBox(height: 180, child: Center(child: Text("No offers right now")));
+      return SizedBox(
+        height: 180,
+        child: Center(
+          child: Text(
+            "No offers right now",
+            style: GoogleFonts.poppins(color: _textMuted),
+          ),
+        ),
+      );
     }
     return Column(
       children: [
         SizedBox(
-          height: 180,
+          height: isSmall ? 220 : 260,
           child: PageView.builder(
             controller: _carouselController,
             onPageChanged: (index) => setState(() => _carouselIndex = index),
@@ -1139,25 +1681,33 @@ class _HomePageState extends State<HomePage> {
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    color: Colors.white,
+                    color: _cardSurface,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        if (_videoController != null && _videoController!.value.isInitialized)
+                        if (_videoController != null &&
+                            _videoController!.value.isInitialized)
                           AspectRatio(
                             aspectRatio: _videoController!.value.aspectRatio,
                             child: VideoPlayer(_videoController!),
                           )
                         else
-                          const Icon(Icons.videocam, size: 48, color: Colors.grey),
+                          const Icon(
+                            Icons.videocam,
+                            size: 48,
+                            color: Colors.grey,
+                          ),
                         Positioned(
                           right: 8,
                           bottom: 8,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.black.withAlpha(102),
                               borderRadius: BorderRadius.circular(20),
@@ -1167,7 +1717,9 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 IconButton(
                                   icon: Icon(
-                                    (_videoController?.value.isPlaying ?? false) ? Icons.pause : Icons.play_arrow,
+                                    (_videoController?.value.isPlaying ?? false)
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
                                     color: Colors.white,
                                   ),
                                   onPressed: () {
@@ -1182,7 +1734,12 @@ class _HomePageState extends State<HomePage> {
                                   },
                                 ),
                                 IconButton(
-                                  icon: Icon(_videoMuted ? Icons.volume_off : Icons.volume_up, color: Colors.white),
+                                  icon: Icon(
+                                    _videoMuted
+                                        ? Icons.volume_off
+                                        : Icons.volume_up,
+                                    color: Colors.white,
+                                  ),
                                   onPressed: () {
                                     final c = _videoController;
                                     if (c == null) return;
@@ -1191,7 +1748,10 @@ class _HomePageState extends State<HomePage> {
                                   },
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.fullscreen, color: Colors.white),
+                                  icon: const Icon(
+                                    Icons.fullscreen,
+                                    color: Colors.white,
+                                  ),
                                   onPressed: () async {
                                     await Navigator.push(
                                       context,
@@ -1218,23 +1778,33 @@ class _HomePageState extends State<HomePage> {
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  color: Colors.white,
+                  color: _cardSurface,
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: imgUrl.startsWith('http') 
-                    ? Image.network(
-                        imgUrl, 
-                        fit: BoxFit.contain,
-                        errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image),
-                      )
-                    : Image.asset(
-                        imgUrl,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Center(
-                          child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                  child: imgUrl.startsWith('http')
+                      ? Image.network(
+                          imgUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (ctx, err, stack) =>
+                              const Icon(Icons.broken_image),
+                        )
+                      : Image.asset(
+                          imgUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                              ),
                         ),
-                      ),
                 ),
               );
             },
@@ -1250,7 +1820,11 @@ class _HomePageState extends State<HomePage> {
               height: 8,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _carouselIndex == index ? _cFusionPurple : _cDeepBlue.withAlpha(45),
+                color: _carouselIndex == index
+                    ? _brandColor
+                    : _isDarkMode
+                    ? Colors.white.withAlpha(45)
+                    : _cDeepBlue.withAlpha(45),
               ),
             );
           }),
@@ -1264,45 +1838,34 @@ class _HomePageState extends State<HomePage> {
     return SizedBox(
       height: 68,
       child: ListView.builder(
+        controller: _brandScrollController,
         scrollDirection: Axis.horizontal,
         itemCount: brandLogos.length,
         itemBuilder: (context, index) {
           final logoUrl = brandLogos[index];
+          Widget imgWidget = logoUrl.startsWith('http')
+              ? Image.network(
+                  logoUrl,
+                  width: 92,
+                  height: 52,
+                  fit: BoxFit.contain,
+                  errorBuilder: (ctx, err, stack) => const Icon(Icons.business),
+                )
+              : Image.asset(
+                  logoUrl,
+                  width: 92,
+                  height: 52,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.business, color: Colors.grey),
+                );
+
           return Container(
-            width: 108,
+            width: 104,
             margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(235),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _cFusionPurple.withAlpha(26)),
-              boxShadow: [
-                BoxShadow(
-                  color: _cFusionPurple.withAlpha(18),
-                  blurRadius: 16,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Center(
-                child: logoUrl.startsWith('http')
-                    ? Image.network(
-                        logoUrl,
-                        width: 92,
-                        height: 52,
-                        fit: BoxFit.contain,
-                        errorBuilder: (ctx, err, stack) => const Icon(Icons.business),
-                      )
-                    : Image.asset(
-                        logoUrl,
-                        width: 92,
-                        height: 52,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Colors.grey),
-                      ),
-              ),
+              borderRadius: BorderRadius.circular(10),
+              child: Center(child: imgWidget),
             ),
           );
         },
@@ -1314,12 +1877,15 @@ class _HomePageState extends State<HomePage> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     if (_errorMessage != null) {
       return Center(
         child: Column(
           children: [
-            Text("Error: $_errorMessage", style: const TextStyle(color: Colors.red, fontSize: 12)),
+            Text(
+              "Error: $_errorMessage",
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
             TextButton(onPressed: _loadServices, child: const Text("Retry")),
           ],
         ),
@@ -1327,9 +1893,14 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (_homeCategories.isEmpty) {
-      return const Center(child: Text("No categories found"));
+      return Center(
+        child: Text(
+          "No categories found",
+          style: GoogleFonts.poppins(color: _textMuted),
+        ),
+      );
     }
-    
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -1346,8 +1917,10 @@ class _HomePageState extends State<HomePage> {
           return InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening categories...')));
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoriesPage()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CategoriesPage()),
+              );
             },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1356,27 +1929,23 @@ class _HomePageState extends State<HomePage> {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [_cLightBlueTint, _cSoftBlendBackground, _cLightPinkTint],
-                    ),
+                    color: _brandColor.withAlpha(25),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _cDeepBlue.withAlpha(18)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _cFusionPurple.withAlpha(12),
-                        blurRadius: 10,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
                   ),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded, color: _cFusionPurple, size: 24),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: _brandColor,
+                    size: 26,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Show More',
-                  style: GoogleFonts.poppins(fontSize: 10.5, fontWeight: FontWeight.w600, color: _cDeepBlue),
+                  style: GoogleFonts.poppins(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textPrimary,
+                  ),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1387,58 +1956,89 @@ class _HomePageState extends State<HomePage> {
         } else {
           final cat = _homeCategories[index];
           final isNetwork = cat['is_network'] == true;
-          final imagePath = cat['image']!;
+          final imagePath = (cat['image'] ?? '').toString();
           final id = (cat['id'] ?? '').toString();
           final label = (cat['label'] ?? '').toString();
-          final gifPath = index < _homeCategoryGifAssets.length ? _homeCategoryGifAssets[index] : null;
+          final matchingGif = _getCategoryGifForLabel(label);
           final isResorts = label.toLowerCase().contains('resort');
-          final iconSize = isResorts ? 68.0 : 60.0;
-          final fallbackImage = isNetwork
-              ? Image.network(
-                  imagePath,
-                  width: iconSize,
-                  height: iconSize,
-                  fit: BoxFit.contain,
-                  errorBuilder: (ctx, err, stack) => Icon(Icons.category_outlined, color: _cFusionPurple.withAlpha(180)),
-                )
-              : Image.asset(
-                  imagePath,
-                  width: iconSize,
-                  height: iconSize,
-                  fit: BoxFit.contain,
-                  errorBuilder: (ctx, err, stack) => Icon(Icons.category_outlined, color: _cFusionPurple.withAlpha(180)),
+          final iconSize = isResorts ? 56.0 : 48.0;
+
+          Widget iconWidget;
+          if (matchingGif != null) {
+            iconWidget = Image.asset(
+              matchingGif,
+              width: iconSize,
+              height: iconSize,
+              fit: BoxFit.contain,
+            );
+          } else if (isNetwork &&
+              imagePath.isNotEmpty &&
+              imagePath.startsWith('http')) {
+            iconWidget = Image.network(
+              imagePath,
+              width: iconSize,
+              height: iconSize,
+              fit: BoxFit.contain,
+              errorBuilder: (ctx, err, stack) {
+                if (matchingGif != null) {
+                  return Image.asset(
+                    matchingGif,
+                    width: iconSize,
+                    height: iconSize,
+                    fit: BoxFit.contain,
+                  );
+                }
+                return Icon(
+                  Icons.category_outlined,
+                  color: _brandColor,
+                  size: 28,
                 );
+              },
+            );
+          } else if (imagePath.isNotEmpty) {
+            iconWidget = Image.asset(
+              imagePath,
+              width: iconSize,
+              height: iconSize,
+              fit: BoxFit.contain,
+              errorBuilder: (ctx, err, stack) =>
+                  Icon(Icons.category_outlined, color: _brandColor, size: 28),
+            );
+          } else {
+            iconWidget = Icon(
+              Icons.category_outlined,
+              color: _brandColor,
+              size: 28,
+            );
+          }
+
           return InkWell(
             borderRadius: BorderRadius.circular(14),
-            onTap: () async {
-              await _showSubcategoryPicker(context, id, label);
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      CategoryServicesPage(categoryId: id, categoryName: label),
+                ),
+              );
             },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: SizedBox(
-                    width: iconSize,
-                    height: iconSize,
-                    child: Center(
-                      child: gifPath != null
-                          ? Image.asset(
-                              gifPath,
-                              width: iconSize,
-                              height: iconSize,
-                              fit: isResorts ? BoxFit.cover : BoxFit.contain,
-                              gaplessPlayback: true,
-                              errorBuilder: (ctx, err, stack) => fallbackImage,
-                            )
-                          : fallbackImage,
-                    ),
-                  ),
+                SizedBox(
+                  width: iconSize,
+                  height: iconSize,
+                  child: Center(child: iconWidget),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   label,
-                  style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w600, color: _cDeepBlue),
+                  style: GoogleFonts.poppins(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textPrimary,
+                  ),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1451,21 +2051,67 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  static String? _getCategoryGifForLabel(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('cater') || l.contains('food') || l.contains('restaurant')) {
+      return 'assets/images/catering.gif';
+    }
+    if (l.contains('banquet') ||
+        l.contains('marriage') ||
+        l.contains('wedding') ||
+        l.contains('event')) {
+      return 'assets/images/marriage.gif';
+    }
+    if (l.contains('hospital') ||
+        l.contains('clinic') ||
+        l.contains('doctor')) {
+      return 'assets/images/Hospital.gif';
+    }
+    if (l.contains('resort') ||
+        l.contains('villa') ||
+        l.contains('house') ||
+        l.contains('estate') ||
+        l.contains('property')) {
+      return 'assets/images/big_house.gif';
+    }
+    if (l.contains('packer') ||
+        l.contains('mover') ||
+        l.contains('shift') ||
+        l.contains('truck')) {
+      return 'assets/images/truck.gif';
+    }
+    if (l.contains('adventure') ||
+        l.contains('explore') ||
+        l.contains('tour') ||
+        l.contains('travel')) {
+      return 'assets/images/girl_exploring.gif';
+    }
+    if (l.contains('spa') ||
+        l.contains('salon') ||
+        l.contains('massage') ||
+        l.contains('beauty') ||
+        l.contains('hair')) {
+      return 'assets/images/massage.gif';
+    }
+    if (l.contains('courier') ||
+        l.contains('delivery') ||
+        l.contains('scooter')) {
+      return 'assets/images/route.gif';
+    }
+    return null;
+  }
+
   Widget _wrapWithHomeBackground(Widget child) {
     return Stack(
       children: [
         Positioned.fill(
           child: IgnorePointer(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppPalette.softBlendBackground,
-                    AppPalette.lightBlueTint,
-                    AppPalette.lightPinkTint,
-                  ],
+                  colors: _pageGradientColors,
                 ),
               ),
             ),
@@ -1474,7 +2120,7 @@ class _HomePageState extends State<HomePage> {
         Positioned.fill(
           child: IgnorePointer(
             child: Opacity(
-              opacity: 0.06,
+              opacity: _isDarkMode ? 0.045 : 0.06,
               child: CustomPaint(painter: DotGridPainter()),
             ),
           ),
@@ -1487,193 +2133,260 @@ class _HomePageState extends State<HomePage> {
   Widget _buildSellOnServekeen(BuildContext context) {
     final u = ApiService().currentUser;
     if (_sellerRequestSubmitted) {
-      return _wrapWithHomeBackground(Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Sell on Servekeen', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            Text('Your vendor signup request is pending approval.', style: GoogleFonts.poppins(fontSize: 13, color: Colors.black87)),
-            const SizedBox(height: 16),
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.login),
-                    title: Text('Login as Vendor', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                    subtitle: Text('After approval, login to get vendor access.', style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      final ok = await Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const LoginScreen(vendorLogin: true)),
-                      );
-                      if (!mounted) return;
-                      if (ok == true) setState(() {});
-                    },
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.edit),
-                    title: Text('Edit Request', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                    onTap: () => setState(() => _sellerRequestSubmitted = false),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ));
-    }
-    if (u == null) {
-      return _wrapWithHomeBackground(SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _sellerFormKey,
+      return _wrapWithHomeBackground(
+        Padding(
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Sell on Servekeen', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              Text('Fill details to switch your role to Seller.', style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700])),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const LoginScreen(vendorLogin: true)),
-                    );
-                  },
-                  child: const Text('Login as Vendor'),
+              Text(
+                'Sell on Servekeen',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: _textPrimary,
                 ),
               ),
-              const SizedBox(height: 16),
-              _sellerField(controller: _sellerBusinessNameController, label: 'Business Name', icon: Icons.business, requiredField: true),
-              const SizedBox(height: 12),
-              _sellerField(controller: _sellerNameController, label: 'Name', icon: Icons.person, requiredField: true),
-              const SizedBox(height: 12),
-              _sellerField(
-                controller: _sellerEmailController,
-                label: 'Email',
-                icon: Icons.email,
-                requiredField: true,
-                enabled: true,
-                keyboardType: TextInputType.emailAddress,
+              const SizedBox(height: 8),
+              Text(
+                'Your vendor signup request is pending approval.',
+                style: GoogleFonts.poppins(fontSize: 13, color: _textPrimary),
               ),
-              const SizedBox(height: 12),
-              _sellerField(controller: _sellerPasswordController, label: 'Password', icon: Icons.lock, requiredField: true, obscureText: true),
-              const SizedBox(height: 12),
-              _sellerField(controller: _sellerMobileController, label: 'Mobile', icon: Icons.phone, requiredField: true, keyboardType: TextInputType.phone),
-              const SizedBox(height: 12),
-              _sellerField(controller: _sellerBusinessWebsiteController, label: 'Business Website', icon: Icons.language, requiredField: false, keyboardType: TextInputType.url),
-              const SizedBox(height: 12),
-              _sellerField(controller: _sellerAddressController, label: 'Address', icon: Icons.location_on, requiredField: true),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: _sellerField(controller: _sellerCityController, label: 'City', icon: Icons.location_city, requiredField: true)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _sellerField(controller: _sellerStateController, label: 'State', icon: Icons.map, requiredField: true)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _sellerField(controller: _sellerPincodeController, label: 'Pincode', icon: Icons.pin_drop, requiredField: true, keyboardType: TextInputType.number),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 52,
-                child: FilledButton(
-                  onPressed: _sellerSubmitting ? null : _submitSellerRequest,
-                  child: _sellerSubmitting
-                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Switch to Seller'),
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                color: _cardSurface,
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.login),
+                      title: Text(
+                        'Login as Vendor',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        'After approval, login to get vendor access.',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: _textSecondary,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right,
+                        color: _textSecondary,
+                      ),
+                      onTap: () async {
+                        final ok = await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const LoginScreen(vendorLogin: true),
+                          ),
+                        );
+                        if (!mounted) return;
+                        if (ok == true) setState(() {});
+                      },
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.edit),
+                      title: Text(
+                        'Edit Request',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
+                      onTap: () =>
+                          setState(() => _sellerRequestSubmitted = false),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-      ));
+      );
+    }
+    if (u == null) {
+      return _wrapWithHomeBackground(
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _sellerFormKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Sell on Servekeen',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Fill details to switch your role to Seller.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: _textSecondary,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => const LoginScreen(vendorLogin: true),
+                        ),
+                      );
+                    },
+                    child: const Text('Login as Vendor'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _sellerField(
+                  controller: _sellerNameController,
+                  label: 'Name',
+                  icon: Icons.person,
+                  requiredField: true,
+                ),
+                const SizedBox(height: 12),
+                _sellerField(
+                  controller: _sellerEmailController,
+                  label: 'Email',
+                  icon: Icons.email,
+                  requiredField: true,
+                  enabled: true,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                _sellerField(
+                  controller: _sellerMobileController,
+                  label: 'Contact Number',
+                  icon: Icons.phone,
+                  requiredField: true,
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: _sellerSubmitting ? null : _submitSellerRequest,
+                    child: _sellerSubmitting
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Switch to Seller'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     final role = _roleOf(u);
     if (role == 'admin') {
       return _wrapWithHomeBackground(_buildAdminHome(context, u));
     }
-    if (role == 'seller' || ApiService().isSellerOnboarded || _sellerCompleted) {
+    if (role == 'seller' ||
+        ApiService().isSellerOnboarded ||
+        _sellerCompleted) {
       return _wrapWithHomeBackground(_buildSellerHome(context, u));
     }
 
-    return _wrapWithHomeBackground(SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Form(
-        key: _sellerFormKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Sell on Servekeen', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            Text('Fill details to switch your role to Seller.', style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700])),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () async {
-                  final navigator = Navigator.of(context);
-                  await ApiService().logout();
-                  if (!mounted) return;
-                  final ok = await navigator.push(
-                    MaterialPageRoute(builder: (_) => const LoginScreen(vendorLogin: true)),
-                  );
-                  if (!mounted) return;
-                  if (ok == true) setState(() {});
-                },
-                child: const Text('Login as Vendor'),
+    return _wrapWithHomeBackground(
+      SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _sellerFormKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Sell on Servekeen',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: _textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            _sellerField(controller: _sellerBusinessNameController, label: 'Business Name', icon: Icons.business, requiredField: true),
-            const SizedBox(height: 12),
-            _sellerField(controller: _sellerNameController, label: 'Name', icon: Icons.person, requiredField: true),
-            const SizedBox(height: 12),
-            _sellerField(
-              controller: _sellerEmailController,
-              label: 'Email',
-              icon: Icons.email,
-              requiredField: true,
-              enabled: _sellerEmailController.text.trim().isEmpty,
-            ),
-            const SizedBox(height: 12),
-            _sellerField(controller: _sellerPasswordController, label: 'Password', icon: Icons.lock, requiredField: true, obscureText: true),
-            const SizedBox(height: 12),
-            _sellerField(controller: _sellerMobileController, label: 'Mobile', icon: Icons.phone, requiredField: true, keyboardType: TextInputType.phone),
-            const SizedBox(height: 12),
-            _sellerField(controller: _sellerBusinessWebsiteController, label: 'Business Website', icon: Icons.language, requiredField: false, keyboardType: TextInputType.url),
-            const SizedBox(height: 12),
-            _sellerField(controller: _sellerAddressController, label: 'Address', icon: Icons.location_on, requiredField: true),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _sellerField(controller: _sellerCityController, label: 'City', icon: Icons.location_city, requiredField: true)),
-                const SizedBox(width: 12),
-                Expanded(child: _sellerField(controller: _sellerStateController, label: 'State', icon: Icons.map, requiredField: true)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _sellerField(controller: _sellerPincodeController, label: 'Pincode', icon: Icons.pin_drop, requiredField: true, keyboardType: TextInputType.number),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 52,
-              child: FilledButton(
-                onPressed: _sellerSubmitting ? null : _submitSellerRequest,
-                child: _sellerSubmitting
-                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Switch to Seller'),
+              const SizedBox(height: 6),
+              Text(
+                'Fill details to switch your role to Seller.',
+                style: GoogleFonts.poppins(fontSize: 13, color: _textSecondary),
               ),
-            ),
-          ],
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () async {
+                    final navigator = Navigator.of(context);
+                    await ApiService().logout();
+                    if (!mounted) return;
+                    final ok = await navigator.push(
+                      MaterialPageRoute(
+                        builder: (_) => const LoginScreen(vendorLogin: true),
+                      ),
+                    );
+                    if (!mounted) return;
+                    if (ok == true) setState(() {});
+                  },
+                  child: const Text('Login as Vendor'),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _sellerField(
+                controller: _sellerNameController,
+                label: 'Name',
+                icon: Icons.person,
+                requiredField: true,
+              ),
+              const SizedBox(height: 12),
+              _sellerField(
+                controller: _sellerEmailController,
+                label: 'Email',
+                icon: Icons.email,
+                requiredField: true,
+                enabled: _sellerEmailController.text.trim().isEmpty,
+              ),
+              const SizedBox(height: 12),
+              _sellerField(
+                controller: _sellerMobileController,
+                label: 'Contact Number',
+                icon: Icons.phone,
+                requiredField: true,
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 52,
+                child: FilledButton(
+                  onPressed: _sellerSubmitting ? null : _submitSellerRequest,
+                  child: _sellerSubmitting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Switch to Seller'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildAdminHome(BuildContext context, Map<String, dynamic> u) {
@@ -1682,50 +2395,72 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Admin Dashboard', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700)),
+          Text(
+            'Admin Dashboard',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text('Welcome, ${(u['name'] ?? '').toString().isEmpty ? 'Admin' : u['name']}', style: GoogleFonts.poppins(fontSize: 14)),
+          Text(
+            'Welcome, ${(u['name'] ?? '').toString().isEmpty ? 'Admin' : u['name']}',
+            style: GoogleFonts.poppins(fontSize: 14),
+          ),
           const SizedBox(height: 16),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _cardSurface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: _borderColor),
             ),
             child: Text(
               'You are logged in as Admin.',
-              style: GoogleFonts.poppins(fontSize: 13),
+              style: GoogleFonts.poppins(fontSize: 13, color: _textPrimary),
             ),
           ),
           const SizedBox(height: 16),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.person_search_outlined),
-                  title: Text('Vendor Signup Requests', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    'Vendor Signup Requests',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const VendorSignupRequestsPage()),
+                      MaterialPageRoute(
+                        builder: (_) => const VendorSignupRequestsPage(),
+                      ),
                     );
                   },
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.home_outlined),
-                  title: Text('Go to Home', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    'Go to Home',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => setState(() => _navIndex = _tabHome),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.logout),
-                  title: Text('Sign Out', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    'Sign Out',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
                   onTap: () async {
                     await ApiService().logout();
                     if (!mounted) return;
@@ -1746,27 +2481,38 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Seller Dashboard', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700)),
+          Text(
+            'Seller Dashboard',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text('Welcome, ${(u['name'] ?? '').toString().isEmpty ? 'Seller' : u['name']}', style: GoogleFonts.poppins(fontSize: 14)),
+          Text(
+            'Welcome, ${(u['name'] ?? '').toString().isEmpty ? 'Seller' : u['name']}',
+            style: GoogleFonts.poppins(fontSize: 14),
+          ),
           const SizedBox(height: 16),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _cardSurface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: _borderColor),
             ),
             child: Text(
               'Your seller profile is active. You can now start selling on Servekeen.',
-              style: GoogleFonts.poppins(fontSize: 13),
+              style: GoogleFonts.poppins(fontSize: 13, color: _textPrimary),
             ),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddServicePage()));
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const AddServicePage()));
             },
             icon: const Icon(Icons.add),
             label: const Text('Add Your First Service'),
@@ -1774,28 +2520,49 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.design_services),
-                  title: Text('My Service', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    'My Service',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyServicesPage())),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MyServicesPage()),
+                  ),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.bar_chart),
-                  title: Text('Check Statics', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    'Check Statics',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const VendorStatisticsPage())),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const VendorStatisticsPage(),
+                    ),
+                  ),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.store),
-                  title: Text('Vendor Profile', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    'Vendor Profile',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const VendorProfilePage())),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const VendorProfilePage(),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1819,18 +2586,24 @@ class _HomePageState extends State<HomePage> {
       enabled: enabled,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      style: GoogleFonts.poppins(color: _textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
+        labelStyle: GoogleFonts.poppins(color: _textSecondary),
+        prefixIcon: Icon(icon, color: _brandColor),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: _fieldSurface,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _cDeepBlue.withAlpha(28)),
+          borderSide: BorderSide(color: _borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _cFusionPurple, width: 1.2),
+          borderSide: BorderSide(color: _brandColor, width: 1.2),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: _borderColor),
         ),
       ),
       validator: (v) {
@@ -1847,16 +2620,16 @@ class _HomePageState extends State<HomePage> {
     setState(() => _sellerSubmitting = true);
     try {
       final vendor = <String, dynamic>{
-        'businessname': _sellerBusinessNameController.text.trim(),
+        'businessname': _sellerNameController.text.trim(),
         'email': _sellerEmailController.text.trim(),
         'password': _sellerPasswordController.text,
         'mobile': _sellerMobileController.text.trim(),
-        'bwebsite': _sellerBusinessWebsiteController.text.trim(),
+        'bwebsite': '',
         'name': _sellerNameController.text.trim(),
-        'address': _sellerAddressController.text.trim(),
-        'city': _sellerCityController.text.trim(),
-        'state': _sellerStateController.text.trim(),
-        'pincode': _sellerPincodeController.text.trim(),
+        'address': '',
+        'city': '',
+        'state': '',
+        'pincode': '',
         'is_active': 0,
       };
       if ((vendor['bwebsite'] as String).trim().isEmpty) {
@@ -1867,217 +2640,277 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       if (vendorResult['status'] != 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text((vendorResult['message'] ?? 'Failed to save vendor').toString()), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(
+              (vendorResult['message'] ?? 'Failed to save vendor').toString(),
+            ),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
       setState(() => _sellerRequestSubmitted = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request submitted. Waiting for admin approval.'), backgroundColor: Colors.green),
+        const SnackBar(
+          content: Text('Request submitted. Waiting for admin approval.'),
+          backgroundColor: Colors.green,
+        ),
       );
     } finally {
       if (mounted) setState(() => _sellerSubmitting = false);
     }
   }
-  
+
   Widget _buildChatContent() {
-    return _wrapWithHomeBackground(Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(top: 12, left: 8, right: 8, bottom: 8),
-            itemCount: _chatHistory.length,
-            itemBuilder: (context, index) {
-              final turn = _chatHistory[index];
-              final isUser = turn.role == 'user';
-              return Align(
-                alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isUser ? AppPalette.fusionPurple : Colors.white.withAlpha(235),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppPalette.deepBlue.withAlpha(24)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppPalette.fusionPurple.withAlpha(16),
-                        blurRadius: 10,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    turn.content,
-                    style: GoogleFonts.poppins(color: isUser ? Colors.white : AppPalette.deepBlue),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        if (_chatSearchResults.isNotEmpty)
-          Container(
-            height: 180,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 4, bottom: 4),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Found ${_chatSearchResults.length} services',
-                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, color: _cDeepBlue),
+    return _wrapWithHomeBackground(
+      Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.only(
+                top: 12,
+                left: 8,
+                right: 8,
+                bottom: 8,
+              ),
+              itemCount: _chatHistory.length,
+              itemBuilder: (context, index) {
+                final turn = _chatHistory[index];
+                final isUser = turn.role == 'user';
+                return Align(
+                  alignment: isUser
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isUser ? _brandColor : _cardSurface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _borderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _softShadow,
+                          blurRadius: 10,
+                          offset: const Offset(0, 6),
                         ),
+                      ],
+                    ),
+                    child: Text(
+                      turn.content,
+                      style: GoogleFonts.poppins(
+                        color: isUser ? Colors.white : _textPrimary,
                       ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => AllServicesPage(services: _chatSearchResults)),
-                          );
-                        },
-                        style: TextButton.styleFrom(foregroundColor: _cFusionPurple, padding: EdgeInsets.zero, minimumSize: const Size(50, 30)),
-                        child: const Text('See all', style: TextStyle(fontSize: 12)),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _chatSearchResults.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
-                    itemBuilder: (context, index) {
-                      final s = _chatSearchResults[index];
-                      return SizedBox(width: 150, child: _ServiceCard(service: s));
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (_chatLoading) const LinearProgressIndicator(),
-        if (_chatShowActions)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                OutlinedButton(
-                  onPressed: _chatLoading
-                      ? null
-                      : () {
-                          _sendChatMessageFromUi('I want to provide feedback.');
-                        },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppPalette.fusionPurple,
-                    side: BorderSide(color: AppPalette.fusionPurple.withAlpha(120)),
-                  ),
-                  child: const Text('Provide feedback'),
-                ),
-                OutlinedButton(
-                  onPressed: _chatLoading
-                      ? null
-                      : () {
-                          setState(() => _chatShowNeedHelpChoices = !_chatShowNeedHelpChoices);
-                        },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppPalette.fusionPurple,
-                    side: BorderSide(color: AppPalette.fusionPurple.withAlpha(120)),
-                  ),
-                  child: const Text('Need help'),
-                ),
-                OutlinedButton(
-                  onPressed: _chatLoading
-                      ? null
-                      : () {
-                          _sendChatMessageFromUi('I want to report a bug.');
-                        },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppPalette.fusionPurple,
-                    side: BorderSide(color: AppPalette.fusionPurple.withAlpha(120)),
-                  ),
-                  child: const Text('Indicate bug'),
-                ),
-              ],
-            ),
-          ),
-        if (_chatShowActions && _chatShowNeedHelpChoices)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton(
-                  onPressed: _chatLoading
-                      ? null
-                      : () {
-                          _openSupportTicketSheet(context, 'Need help as vendor');
-                        },
-                  style: FilledButton.styleFrom(backgroundColor: AppPalette.fusionPurple),
-                  child: const Text('Need help as vendor'),
-                ),
-                FilledButton(
-                  onPressed: _chatLoading
-                      ? null
-                      : () {
-                          _openSupportTicketSheet(context, 'Need help as user');
-                        },
-                  style: FilledButton.styleFrom(backgroundColor: AppPalette.fusionPurple),
-                  child: const Text('Need help as user'),
-                ),
-              ],
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.all(6.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppPalette.deepBlue.withAlpha(28)),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            child: Row(
-              children: [
-                const Icon(Icons.chat_bubble_outline, color: AppPalette.fusionPurple, size: 20),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: TextField(
-                    controller: _chatController,
-                    decoration: InputDecoration(
-                      hintText: 'Ask something...',
-                      hintStyle: GoogleFonts.poppins(color: AppPalette.deepBlue.withAlpha(130), fontSize: 14),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
-                ),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppPalette.fusionPurple,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    minimumSize: const Size(36, 36),
-                  ),
-                  onPressed: () {
-                    final text = _chatController.text.trim();
-                    _sendChatMessageFromUi(text);
-                  },
-                  child: const Icon(Icons.send, size: 16),
-                ),
-              ],
+                );
+              },
             ),
           ),
-        ),
-      ],
-    ));
+          if (_chatSearchResults.isNotEmpty)
+            Container(
+              height: 180,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Found ${_chatSearchResults.length} services',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: _textPrimary,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AllServicesPage(
+                                  services: _chatSearchResults,
+                                ),
+                              ),
+                            );
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: _brandColor,
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(50, 30),
+                          ),
+                          child: const Text(
+                            'See all',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _chatSearchResults.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        final s = _chatSearchResults[index];
+                        return SizedBox(
+                          width: 150,
+                          child: _ServiceCard(service: s),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (_chatLoading) const LinearProgressIndicator(),
+          if (_chatShowActions)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: _chatLoading
+                        ? null
+                        : () {
+                            _sendChatMessageFromUi(
+                              'I want to provide feedback.',
+                            );
+                          },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _brandColor,
+                      side: BorderSide(color: _brandColor.withAlpha(150)),
+                    ),
+                    child: const Text('Provide feedback'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _chatLoading
+                        ? null
+                        : () {
+                            setState(
+                              () => _chatShowNeedHelpChoices =
+                                  !_chatShowNeedHelpChoices,
+                            );
+                          },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _brandColor,
+                      side: BorderSide(color: _brandColor.withAlpha(150)),
+                    ),
+                    child: const Text('Need help'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _chatLoading
+                        ? null
+                        : () {
+                            _sendChatMessageFromUi('I want to report a bug.');
+                          },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _brandColor,
+                      side: BorderSide(color: _brandColor.withAlpha(150)),
+                    ),
+                    child: const Text('Indicate bug'),
+                  ),
+                ],
+              ),
+            ),
+          if (_chatShowActions && _chatShowNeedHelpChoices)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton(
+                    onPressed: _chatLoading
+                        ? null
+                        : () {
+                            _openSupportTicketSheet(
+                              context,
+                              'Need help as vendor',
+                            );
+                          },
+                    style: FilledButton.styleFrom(backgroundColor: _brandColor),
+                    child: const Text('Need help as vendor'),
+                  ),
+                  FilledButton(
+                    onPressed: _chatLoading
+                        ? null
+                        : () {
+                            _openSupportTicketSheet(
+                              context,
+                              'Need help as user',
+                            );
+                          },
+                    style: FilledButton.styleFrom(backgroundColor: _brandColor),
+                    child: const Text('Need help as user'),
+                  ),
+                ],
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(6.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _cardSurface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _borderColor),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              child: Row(
+                children: [
+                  Icon(Icons.chat_bubble_outline, color: _brandColor, size: 20),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: TextField(
+                      controller: _chatController,
+                      style: GoogleFonts.poppins(color: _textPrimary),
+                      decoration: InputDecoration(
+                        hintText: 'Ask something...',
+                        hintStyle: GoogleFonts.poppins(
+                          color: _textSecondary,
+                          fontSize: 14,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _brandColor,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      minimumSize: const Size(36, 36),
+                    ),
+                    onPressed: () {
+                      final text = _chatController.text.trim();
+                      _sendChatMessageFromUi(text);
+                    },
+                    child: const Icon(Icons.send, size: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _sendChatMessageFromUi(String text) {
@@ -2099,30 +2932,52 @@ class _HomePageState extends State<HomePage> {
     try {
       final results = await ApiService().searchServices(query, limit: 5);
       if (!mounted) return;
-      if (results.isEmpty) {
+      final relevant = _rankAndFilterServices(results, query);
+      if (relevant.isEmpty) {
         setState(() {
-          _chatHistory.add(ChatTurn(role: 'ai', content: 'No services found for "$query". Try searching for something else like "spa", "catering", or "hospital".'));
+          _chatHistory.add(
+            ChatTurn(
+              role: 'ai',
+              content:
+                  'No services found for "$query". Try searching for something else like "spa", "catering", or "hospital".',
+            ),
+          );
           _chatSearchResults = [];
           _chatLoading = false;
         });
         return;
       }
       setState(() {
-        _chatHistory.add(ChatTurn(role: 'ai', content: 'I found ${results.length} services for "$query":'));
-        _chatSearchResults = results;
+        _chatHistory.add(
+          ChatTurn(
+            role: 'ai',
+            content:
+                'I found ${relevant.length} relevant services for "$query":',
+          ),
+        );
+        _chatSearchResults = relevant;
         _chatLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _chatHistory.add(ChatTurn(role: 'ai', content: 'Sorry, I could not search right now. Please try again later.'));
+        _chatHistory.add(
+          ChatTurn(
+            role: 'ai',
+            content:
+                'Sorry, I could not search right now. Please try again later.',
+          ),
+        );
         _chatSearchResults = [];
         _chatLoading = false;
       });
     }
   }
 
-  Future<void> _openSupportTicketSheet(BuildContext context, String presetSubject) async {
+  Future<void> _openSupportTicketSheet(
+    BuildContext context,
+    String presetSubject,
+  ) async {
     final u = ApiService().currentUser;
     final userEmail = (u?['email'] ?? '').toString();
     final userMobile = (u?['mobile'] ?? u?['phone'] ?? '').toString();
@@ -2131,8 +2986,10 @@ class _HomePageState extends State<HomePage> {
     final result = await showModalBottomSheet<Map<String, String>>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      backgroundColor: _cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) {
         return _SupportTicketSheet(
           presetSubject: presetSubject,
@@ -2151,120 +3008,14 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _chatHistory.add(ChatTurn(role: 'user', content: subject));
       _chatHistory.add(ChatTurn(role: 'user', content: message));
-      _chatHistory.add(ChatTurn(role: 'ai', content: 'Ticket sent successfully.'));
+      _chatHistory.add(
+        ChatTurn(role: 'ai', content: 'Ticket sent successfully.'),
+      );
       _chatShowActions = true;
       _chatShowNeedHelpChoices = false;
     });
   }
-  
-  Future<void> _showSubcategoryPicker(BuildContext context, String categoryId, String categoryName) async {
-    await HierarchyRepository().init();
-    if (!context.mounted) return;
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: () async {
-                // Try with provided ID
-                var subs = await ApiService().fetchSubcategories(categoryId);
-                if (subs.isNotEmpty) return subs;
-                // Fallback: resolve category ID by name if ID was empty or mismatch
-                if (categoryId.isEmpty) {
-                  try {
-                    final data = await ApiService().fetchAppData();
-                    final match = (data['categories'] as List?)?.firstWhere(
-                      (c) => ((c['category_name'] ?? c['name'] ?? '').toString()) == categoryName,
-                      orElse: () => null,
-                    );
-                    final resolvedId = match != null ? (match['id'] ?? '').toString() : '';
-                    if (resolvedId.isNotEmpty) {
-                      subs = await ApiService().fetchSubcategories(resolvedId);
-                      categoryId = resolvedId; // update for navigation
-                    }
-                  } catch (_) {}
-                }
-                return subs;
-              }(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()));
-                }
-                final subsRaw = snapshot.data ?? const [];
-                return SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Select Subcategory', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: _cDeepBlue)),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          ChoiceChip(
-                            label: const Text('All'),
-                            selected: true,
-                            labelStyle: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
-                            selectedColor: _cFusionPurple,
-                            backgroundColor: Colors.white,
-                            shape: StadiumBorder(side: BorderSide(color: _cDeepBlue.withAlpha(26))),
-                            onSelected: (_) {
-                              Navigator.pop(ctx);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CategoryServicesPage(
-                                    categoryId: categoryId,
-                                    categoryName: categoryName,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          ...subsRaw.map((m) {
-                            final id = (m['id'] ?? '').toString();
-                            final label = (m['subname'] ?? m['name'] ?? 'Unknown').toString();
-                            return ChoiceChip(
-                              label: Text(label),
-                              selected: false,
-                              labelStyle: GoogleFonts.poppins(color: _cDeepBlue, fontWeight: FontWeight.w600),
-                              selectedColor: _cFusionPurple,
-                              backgroundColor: Colors.white,
-                              shape: StadiumBorder(side: BorderSide(color: _cDeepBlue.withAlpha(26))),
-                              onSelected: (_) {
-                                Navigator.pop(ctx);
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => SubcategoryMapPage(
-                                      categoryId: categoryId,
-                                      subcategoryId: id,
-                                      subcategoryName: label,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          }),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
-  
+
   Widget _buildProfileContent(BuildContext context) {
     return const ProfilePage();
   }
@@ -2278,125 +3029,194 @@ class _ServiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imgPath = service.primaryImageUrl ?? '';
+    final localAsset = service.localAssetImage;
     final tier = service.priceTier;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark
+        ? _HomePageState._cDarkElevatedSurface
+        : Colors.white.withAlpha(235);
+    final placeholderSurface = isDark
+        ? _HomePageState._cDarkMutedSurface
+        : _HomePageState._cLightBlueTint;
+    final textPrimary = isDark
+        ? _HomePageState._cDarkTextPrimary
+        : _HomePageState._cDeepBlue;
+    final textSecondary = isDark
+        ? _HomePageState._cDarkTextSecondary
+        : _HomePageState._cDeepBlue.withAlpha(150);
+    final brandColor = isDark
+        ? _HomePageState._cDarkBrandBlue
+        : _HomePageState._cFusionPurple;
+    final borderColor = isDark
+        ? Colors.white.withAlpha(24)
+        : _HomePageState._cFusionPurple.withAlpha(26);
+    final shadowColor = isDark
+        ? Colors.black.withAlpha(70)
+        : _HomePageState._cFusionPurple.withAlpha(16);
 
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => ServiceDetailPage(service: service)),
+          MaterialPageRoute(
+            builder: (_) => ServiceDetailPage(service: service),
+          ),
         );
       },
       child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(235),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _HomePageState._cFusionPurple.withAlpha(26)),
-        boxShadow: [
-          BoxShadow(
-            color: _HomePageState._cFusionPurple.withAlpha(16),
-            blurRadius: 16,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: imgPath.isNotEmpty
-                  ? Image.network(
-                      imgPath,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (ctx, err, stack) => Container(
-                        color: _HomePageState._cLightBlueTint,
-                        child: const Icon(Icons.broken_image, color: Colors.grey),
-                      ),
-                    )
-                  : Container(
-                      color: _HomePageState._cLightBlueTint,
-                      child: const Icon(Icons.image_not_supported, color: Colors.grey),
-                    ),
+        decoration: BoxDecoration(
+          color: surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor,
+              blurRadius: 16,
+              offset: const Offset(0, 10),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  service.serviceName,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 12, color: _HomePageState._cDeepBlue),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
                 ),
-                Text(
-                  service.companyName,
-                  style: GoogleFonts.poppins(color: _HomePageState._cDeepBlue.withAlpha(150), fontSize: 10),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    Text(
-                      service.price != null ? '₹${service.price!.toStringAsFixed(0)}' : 'Price on Request',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 12, color: _HomePageState._cFusionPurple),
-                    ),
-                    if (service.perPrice != null && service.perPrice!.isNotEmpty)
-                      Text(
-                        ' / ${service.perPrice}',
-                        style: GoogleFonts.poppins(fontSize: 10, color: _HomePageState._cDeepBlue.withAlpha(140)),
+                child: imgPath.isNotEmpty
+                    ? Image.network(
+                        imgPath,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, stack) => Container(
+                          color: placeholderSurface,
+                          child: localAsset != null
+                              ? Image.asset(localAsset, fit: BoxFit.contain)
+                              : const Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
+                                ),
+                        ),
+                      )
+                    : Container(
+                        color: placeholderSurface,
+                        child: localAsset != null
+                            ? Image.asset(localAsset, fit: BoxFit.contain)
+                            : const Icon(
+                                Icons.image_not_supported,
+                                color: Colors.grey,
+                              ),
                       ),
-                    if (tier != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: service.isPremium ? _HomePageState._cElegantPink : _HomePageState._cLightBlueTint,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: _HomePageState._cDeepBlue.withAlpha(24)),
-                        ),
-                        child: Text(
-                          tier,
-                          style: GoogleFonts.poppins(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                            color: service.isPremium ? Colors.white : _HomePageState._cDeepBlue,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                if (service.locations != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Row(
-                      children: [
-                        Icon(Icons.location_on, size: 10, color: _HomePageState._cFusionPurple.withAlpha(160)),
-                        const SizedBox(width: 2),
-                        Expanded(
-                          child: Text(
-                            service.locations!,
-                            style: GoogleFonts.poppins(fontSize: 10, color: _HomePageState._cDeepBlue.withAlpha(140)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.serviceName,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      color: textPrimary,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  Text(
+                    service.companyName,
+                    style: GoogleFonts.poppins(
+                      color: textSecondary,
+                      fontSize: 10,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      Text(
+                        service.price != null
+                            ? '₹${service.price!.toStringAsFixed(0)}'
+                            : 'Price on Request',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: brandColor,
+                        ),
+                      ),
+                      if (service.perPrice != null &&
+                          service.perPrice!.isNotEmpty)
+                        Text(
+                          ' / ${service.perPrice}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            color: textSecondary,
+                          ),
+                        ),
+                      if (tier != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: service.isPremium
+                                ? _HomePageState._cElegantPink
+                                : placeholderSurface,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: borderColor),
+                          ),
+                          child: Text(
+                            tier,
+                            style: GoogleFonts.poppins(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: service.isPremium
+                                  ? Colors.white
+                                  : textPrimary,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (service.locations != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 10,
+                            color: brandColor.withAlpha(190),
+                          ),
+                          const SizedBox(width: 2),
+                          Expanded(
+                            child: Text(
+                              service.locations!,
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 }
 
@@ -2404,7 +3224,8 @@ class VendorSignupRequestsPage extends StatefulWidget {
   const VendorSignupRequestsPage({super.key});
 
   @override
-  State<VendorSignupRequestsPage> createState() => _VendorSignupRequestsPageState();
+  State<VendorSignupRequestsPage> createState() =>
+      _VendorSignupRequestsPageState();
 }
 
 class _VendorSignupRequestsPageState extends State<VendorSignupRequestsPage> {
@@ -2419,11 +3240,15 @@ class _VendorSignupRequestsPageState extends State<VendorSignupRequestsPage> {
     _load();
   }
 
-  String _idOf(Map<String, dynamic> v) => (v['id'] ?? v['vendor_id'] ?? '').toString();
+  String _idOf(Map<String, dynamic> v) =>
+      (v['id'] ?? v['vendor_id'] ?? '').toString();
   String _nameOf(Map<String, dynamic> v) => (v['name'] ?? '').toString();
-  String _businessOf(Map<String, dynamic> v) => (v['businessname'] ?? v['business_name'] ?? '').toString();
+  String _businessOf(Map<String, dynamic> v) =>
+      (v['businessname'] ?? v['business_name'] ?? '').toString();
   String _emailOf(Map<String, dynamic> v) => (v['email'] ?? '').toString();
-  String _createdAtOf(Map<String, dynamic> v) => (v['created_at'] ?? v['createdAt'] ?? v['registration_date'] ?? '').toString();
+  String _createdAtOf(Map<String, dynamic> v) =>
+      (v['created_at'] ?? v['createdAt'] ?? v['registration_date'] ?? '')
+          .toString();
 
   Future<void> _load() async {
     setState(() {
@@ -2461,11 +3286,16 @@ class _VendorSignupRequestsPageState extends State<VendorSignupRequestsPage> {
           : await ApiService().rejectVendorSignupRequest(vendorId: id);
       if (!mounted) return;
       if (res['status'] == 'success') {
-        setState(() => _vendors = _vendors.where((e) => _idOf(e) != id).toList());
+        setState(
+          () => _vendors = _vendors.where((e) => _idOf(e) != id).toList(),
+        );
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text((res['message'] ?? 'Failed').toString()), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text((res['message'] ?? 'Failed').toString()),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => _actingIds.remove(id));
@@ -2479,27 +3309,66 @@ class _VendorSignupRequestsPageState extends State<VendorSignupRequestsPage> {
     final email = _emailOf(v);
     final createdAt = _createdAtOf(v);
     final acting = id.isNotEmpty && _actingIds.contains(id);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? const Color(0xFFEAF2FC) : AppPalette.deepBlue;
+    final textSecondary = isDark
+        ? const Color(0xFFB4C3D5)
+        : AppPalette.deepBlue.withAlpha(150);
+    final borderColor = isDark
+        ? Colors.white.withAlpha(24)
+        : AppPalette.deepBlue.withAlpha(26);
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      color: isDark ? const Color(0xFF1B2836) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: borderColor),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(business.isEmpty ? 'Vendor Request' : business, style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+            Text(
+              business.isEmpty ? 'Vendor Request' : business,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                color: textPrimary,
+              ),
+            ),
             const SizedBox(height: 6),
-            if (name.isNotEmpty) Text('Name: $name', style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87)),
-            if (email.isNotEmpty) Text('Email: $email', style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87)),
-            if (createdAt.isNotEmpty) Text('Registration: $createdAt', style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87)),
+            if (name.isNotEmpty)
+              Text(
+                'Name: $name',
+                style: GoogleFonts.poppins(fontSize: 12, color: textSecondary),
+              ),
+            if (email.isNotEmpty)
+              Text(
+                'Email: $email',
+                style: GoogleFonts.poppins(fontSize: 12, color: textSecondary),
+              ),
+            if (createdAt.isNotEmpty)
+              Text(
+                'Registration: $createdAt',
+                style: GoogleFonts.poppins(fontSize: 12, color: textSecondary),
+              ),
             const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: FilledButton(
                     onPressed: acting ? null : () => _act(v, true),
-                    child: acting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Approve'),
+                    child: acting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Approve'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -2519,43 +3388,73 @@ class _VendorSignupRequestsPageState extends State<VendorSignupRequestsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? const Color(0xFFEAF2FC) : AppPalette.deepBlue;
+    final textSecondary = isDark
+        ? const Color(0xFFB4C3D5)
+        : AppPalette.deepBlue.withAlpha(150);
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0D1218)
+          : AppPalette.softBlendBackground,
       appBar: AppBar(
-        title: Text('Vendor Signup Requests', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(
+          'Vendor Signup Requests',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: textPrimary,
+          ),
+        ),
+        backgroundColor: isDark ? const Color(0xFF151F2A) : Colors.white,
+        foregroundColor: textPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(_error!, style: GoogleFonts.poppins(color: Colors.red)),
-                          const SizedBox(height: 12),
-                          FilledButton(onPressed: _load, child: const Text('Retry')),
-                        ],
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _error!,
+                        style: GoogleFonts.poppins(color: Colors.red),
                       ),
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _load,
-                    child: _vendors.isEmpty
-                        ? ListView(
-                            children: [
-                              const SizedBox(height: 80),
-                              Center(child: Text('No pending requests', style: GoogleFonts.poppins(color: Colors.black54))),
-                            ],
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.all(12),
-                            itemBuilder: (context, index) => _vendorCard(_vendors[index]),
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
-                            itemCount: _vendors.length,
-                          ),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        onPressed: _load,
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
+                ),
+              )
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: _vendors.isEmpty
+                    ? ListView(
+                        children: [
+                          const SizedBox(height: 80),
+                          Center(
+                            child: Text(
+                              'No pending requests',
+                              style: GoogleFonts.poppins(color: textSecondary),
+                            ),
+                          ),
+                        ],
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(12),
+                        itemBuilder: (context, index) =>
+                            _vendorCard(_vendors[index]),
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemCount: _vendors.length,
+                      ),
+              ),
       ),
     );
   }
@@ -2564,7 +3463,10 @@ class _VendorSignupRequestsPageState extends State<VendorSignupRequestsPage> {
 class _FullscreenVideoPage extends StatefulWidget {
   final String assetPath;
   final bool startMuted;
-  const _FullscreenVideoPage({required this.assetPath, this.startMuted = false});
+  const _FullscreenVideoPage({
+    required this.assetPath,
+    this.startMuted = false,
+  });
 
   @override
   State<_FullscreenVideoPage> createState() => _FullscreenVideoPageState();
@@ -2631,7 +3533,12 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: Icon((_controller?.value.isPlaying ?? false) ? Icons.pause : Icons.play_arrow, color: Colors.white),
+                    icon: Icon(
+                      (_controller?.value.isPlaying ?? false)
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                      color: Colors.white,
+                    ),
                     onPressed: () {
                       final c = _controller;
                       if (c == null) return;
@@ -2644,7 +3551,10 @@ class _FullscreenVideoPageState extends State<_FullscreenVideoPage> {
                     },
                   ),
                   IconButton(
-                    icon: Icon(_muted ? Icons.volume_off : Icons.volume_up, color: Colors.white),
+                    icon: Icon(
+                      _muted ? Icons.volume_off : Icons.volume_up,
+                      color: Colors.white,
+                    ),
                     onPressed: () {
                       final c = _controller;
                       if (c == null) return;

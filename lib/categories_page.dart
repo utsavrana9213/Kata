@@ -4,6 +4,7 @@ import 'package:servekeen/widgets/dot_grid_painter.dart';
 import 'package:servekeen/api_service.dart';
 import 'package:servekeen/category_services_page.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servekeen/theme/palette.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -17,6 +18,25 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   bool _isLoading = true;
   List<Map<String, dynamic>> _categories = [];
+
+  bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
+  Color get _backgroundColor =>
+      _isDarkMode ? Colors.black : AppPalette.softBlendBackground;
+  Color get _cardSurface =>
+      _isDarkMode ? const Color(0xFF121212) : Colors.white;
+  Color get _textPrimary =>
+      _isDarkMode ? const Color(0xFFEAF2FC) : AppPalette.deepBlue;
+  Color get _textSecondary => _isDarkMode
+      ? const Color(0xFFB4C3D5)
+      : AppPalette.deepBlue.withAlpha(150);
+  Color get _brandColor =>
+      _isDarkMode ? const Color(0xFF75AFFF) : AppPalette.fusionPurple;
+  Color get _borderColor => _isDarkMode
+      ? Colors.white.withAlpha(24)
+      : AppPalette.deepBlue.withAlpha(26);
+  List<Color> get _pageGradient => _isDarkMode
+      ? const [Colors.black, Colors.black]
+      : const [AppPalette.softBlendBackground, AppPalette.lightBlueTint];
 
   @override
   void initState() {
@@ -35,13 +55,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
               if (imgPath.isNotEmpty && !imgPath.startsWith('http')) {
                 imgPath = "https://servekeen.com/$imgPath";
               }
-              
+
               return {
                 'id': (e['id'] ?? '').toString(),
                 'label': e['category_name'] ?? e['name'] ?? 'Unknown',
                 'image': imgPath,
                 'is_network': imgPath.isNotEmpty,
-                'icon': Icons.category, 
+                'icon': Icons.category,
               };
             }).toList();
           }
@@ -64,27 +84,32 @@ class _CategoriesPageState extends State<CategoriesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 1,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        title: const Text('Categories'),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: _isDarkMode ? Colors.black : Colors.white,
+        foregroundColor: _textPrimary,
+        title: Text(
+          'Categories',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
       ),
+      backgroundColor: _backgroundColor,
       body: Stack(
         children: [
           Positioned.fill(
             child: IgnorePointer(
               child: Opacity(
-                opacity: 0.05,
+                opacity: _isDarkMode ? 0.04 : 0.05,
                 child: CustomPaint(painter: DotGridPainter()),
               ),
             ),
           ),
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFFF7F9FC), Color(0xFFEFF3F9)],
+                colors: _pageGradient,
               ),
             ),
             child: ListView(
@@ -107,23 +132,26 @@ class _CategoriesPageState extends State<CategoriesPage> {
   Widget _buildSearchBar(BuildContext context) {
     return Card(
       elevation: 0,
+      color: _cardSurface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
-            const Icon(Icons.search),
+            Icon(Icons.search, color: _textSecondary),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
                 controller: _searchController,
+                style: GoogleFonts.poppins(color: _textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Search categories',
+                  hintStyle: GoogleFonts.poppins(color: _textSecondary),
                   border: InputBorder.none,
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
                           tooltip: 'Clear',
-                          icon: const Icon(Icons.clear),
+                          icon: Icon(Icons.clear, color: _textSecondary),
                           onPressed: () {
                             _searchController.clear();
                             setState(() {});
@@ -179,29 +207,55 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
   }
 
-  Widget _categoryTile(BuildContext context, String label, IconData icon, double width, {required String id, String? image, bool? isNetwork}) {
-    final color = Colors.blueAccent;
+  Widget _categoryTile(
+    BuildContext context,
+    String label,
+    IconData icon,
+    double width, {
+    required String id,
+    String? image,
+    bool? isNetwork,
+  }) {
+    final color = _brandColor;
+    Widget iconWidget;
+    if (isNetwork == true && image != null && image.isNotEmpty) {
+      iconWidget = Image.network(
+        image,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => Icon(icon, color: color, size: 20),
+      );
+    } else {
+      iconWidget = Icon(icon, color: color, size: 20);
+    }
+
     return SizedBox(
       width: width,
       child: Card(
         elevation: 0,
+        color: _cardSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         child: InkWell(
           onTap: () {
-            _showSubcategoryPicker(context, id, label);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    CategoryServicesPage(categoryId: id, categoryName: label),
+              ),
+            );
           },
           borderRadius: BorderRadius.circular(14),
           child: Container(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  Color(0xFFF3F7FF),
-                ],
+                colors: _isDarkMode
+                    ? const [Color(0xFF1B2836), Color(0xFF151F2A)]
+                    : const [Colors.white, Color(0xFFF3F7FF)],
               ),
               borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _borderColor),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             child: Row(
@@ -210,15 +264,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: (isNetwork == true && image != null) 
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.network(image, fit: BoxFit.cover),
-                      )
-                    : Icon(icon, color: color),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Center(child: iconWidget),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -226,83 +278,18 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      color: _textPrimary,
+                    ),
                   ),
                 ),
-                Icon(Icons.chevron_right, color: Colors.grey.shade600),
+                Icon(Icons.chevron_right, color: _textSecondary),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Future<void> _showSubcategoryPicker(BuildContext context, String categoryId, String categoryName) async {
-    final subsRaw = await ApiService().fetchSubcategories(categoryId);
-    if (!context.mounted) return;
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Select Subcategory', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('All'),
-                      selected: false,
-                      onSelected: (_) {
-                        Navigator.pop(ctx);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CategoryServicesPage(
-                              categoryId: categoryId,
-                              categoryName: categoryName,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    ...subsRaw.map((m) {
-                      final id = (m['id'] ?? '').toString();
-                      final label = (m['subname'] ?? m['name'] ?? 'Unknown').toString();
-                      return ChoiceChip(
-                        label: Text(label),
-                        selected: false,
-                        onSelected: (_) {
-                          Navigator.pop(ctx);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CategoryServicesPage(
-                                categoryId: categoryId,
-                                categoryName: categoryName,
-                                initialSubcategoryId: id,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    }),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

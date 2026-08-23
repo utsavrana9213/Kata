@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:servekeen/home_page.dart';
 import 'package:servekeen/api_service.dart';
+import 'package:servekeen/theme/palette.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,7 +10,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -20,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
   final _pincodeController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isLoginMode = true;
   bool _obscurePassword = true;
@@ -64,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
     try {
       Map<String, dynamic> result;
-      
+
       if (_isLoginMode) {
         result = await ApiService().login(
           _emailController.text.trim(),
@@ -103,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           );
           if (!mounted) return;
         }
-        
+
         if (result['status'] == 'success') {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const HomePage()),
@@ -120,10 +122,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -147,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       maxLines: maxLines,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.deepPurple),
+        prefixIcon: Icon(icon, color: AppPalette.fusionPurple),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.grey[50],
@@ -161,7 +160,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
+          borderSide: const BorderSide(
+            color: AppPalette.fusionPurple,
+            width: 2,
+          ),
         ),
       ),
       validator: validator,
@@ -177,9 +179,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.deepPurple.shade50,
+              AppPalette.lightBlueTint,
               Colors.white,
-              Colors.deepPurple.shade50,
+              AppPalette.lightBlueTint,
             ],
           ),
         ),
@@ -199,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       const Icon(
                         Icons.account_circle,
                         size: 80,
-                        color: Colors.deepPurple,
+                        color: AppPalette.fusionPurple,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -207,23 +209,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.deepPurple,
+                          color: AppPalette.fusionPurple,
                         ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _isLoginMode 
-                          ? 'Sign in to continue your journey'
-                          : 'Join us to explore amazing services',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
+                        _isLoginMode
+                            ? 'Sign in to continue your journey'
+                            : 'Join us to explore amazing services',
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
-                      
+
                       // Login/Signup Fields
                       if (!_isLoginMode) ...[
                         _buildTextField(
@@ -324,19 +323,21 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                            border: Border(
+                              top: BorderSide(color: Colors.grey[300]!),
+                            ),
                           ),
                           child: const Text(
                             'Login Credentials',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.deepPurple,
+                              color: AppPalette.fusionPurple,
                             ),
                           ),
                         ),
                       ],
-                      
+
                       // Common Fields (Email & Password)
                       _buildTextField(
                         controller: _emailController,
@@ -354,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       _buildTextField(
                         controller: _passwordController,
                         label: 'Password',
@@ -362,7 +363,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         obscureText: _obscurePassword,
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                             color: Colors.grey[600],
                           ),
                           onPressed: () {
@@ -381,9 +384,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           return null;
                         },
                       ),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Submit Button
                       SizedBox(
                         width: double.infinity,
@@ -391,53 +394,55 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _submit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurple,
+                            backgroundColor: AppPalette.fusionPurple,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 8,
-                            shadowColor: Colors.deepPurple.withAlpha(77),
+                            shadowColor: AppPalette.fusionPurple.withAlpha(77),
                           ),
-                          child: _isLoading 
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  _isLoginMode ? 'Sign In' : 'Create Account',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              )
-                            : Text(
-                                _isLoginMode ? 'Sign In' : 'Create Account',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Toggle Button
                       TextButton(
-                        onPressed: _isLoading ? null : () {
-                          setState(() {
-                            _isLoginMode = !_isLoginMode;
-                          });
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                setState(() {
+                                  _isLoginMode = !_isLoginMode;
+                                });
+                              },
                         child: RichText(
                           text: TextSpan(
-                            text: _isLoginMode 
-                              ? "Don't have an account? "
-                              : "Already have an account? ",
+                            text: _isLoginMode
+                                ? "Don't have an account? "
+                                : "Already have an account? ",
                             style: TextStyle(color: Colors.grey[600]),
                             children: [
                               TextSpan(
                                 text: _isLoginMode ? 'Sign Up' : 'Sign In',
                                 style: const TextStyle(
-                                  color: Colors.deepPurple,
+                                  color: AppPalette.fusionPurple,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

@@ -70,6 +70,28 @@ foreach ($searchableColumns as $column) {
   $params[] = $searchTerm;
 }
 
+if (sk_db_has_table($conn, 'categorys')) {
+  $categoryNameColumn = sk_db_has_column($conn, 'categorys', 'category_name') ? 'category_name' : (sk_db_has_column($conn, 'categorys', 'name') ? 'name' : '');
+  if ($categoryNameColumn !== '') {
+    foreach (['category_id', 'categorys', 'category'] as $serviceCategoryColumn) {
+      if (sk_db_has_column($conn, 'services', $serviceCategoryColumn)) {
+        $searchConditions[] = "EXISTS (SELECT 1 FROM categorys c WHERE c.id = services.$serviceCategoryColumn AND c.$categoryNameColumn LIKE ?)";
+        $types .= 's';
+        $params[] = $searchTerm;
+      }
+    }
+  }
+}
+
+if (sk_db_has_table($conn, 'subcategorys')) {
+  $subcategoryNameColumn = sk_db_has_column($conn, 'subcategorys', 'subname') ? 'subname' : (sk_db_has_column($conn, 'subcategorys', 'subcategory_name') ? 'subcategory_name' : (sk_db_has_column($conn, 'subcategorys', 'name') ? 'name' : ''));
+  if ($subcategoryNameColumn !== '' && sk_db_has_column($conn, 'services', 'subcategory')) {
+    $searchConditions[] = "EXISTS (SELECT 1 FROM subcategorys sc WHERE FIND_IN_SET(sc.id, REPLACE(services.subcategory, ' ', '')) > 0 AND sc.$subcategoryNameColumn LIKE ?)";
+    $types .= 's';
+    $params[] = $searchTerm;
+  }
+}
+
 $where[] = '(' . implode(' OR ', $searchConditions) . ')';
 
 if (sk_db_has_column($conn, 'services', 'is_active')) {
@@ -117,18 +139,19 @@ while ($row = $res->fetch_assoc()) {
 $countSql = 'SELECT COUNT(*) as total FROM services';
 if ($where) {
   $countWhere = $where;
-  $countTypes = '';
-  $countParams = [];
-  
-  foreach ($searchableColumns as $column) {
-    $countTypes .= 's';
-    $countParams[] = $searchTerm;
-  }
-  
   $countSql .= ' WHERE ' . implode(' AND ', $countWhere);
   
   $countStmt = $conn->prepare($countSql);
-  $countStmt->bind_param($countTypes, ...$countParams);
+  if ($types !== '') {
+    $countTypes = $types;
+    $countParams = $params;
+    if ($limit > 0) {
+      $countTypes = substr($countTypes, 0, -2);
+      array_pop($countParams);
+      array_pop($countParams);
+    }
+    $countStmt->bind_param($countTypes, ...$countParams);
+  }
   $countStmt->execute();
   $countRes = $countStmt->get_result();
   $totalRow = $countRes->fetch_assoc();

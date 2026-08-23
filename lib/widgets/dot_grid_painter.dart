@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:servekeen/theme/palette.dart';
 
 class DotGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF7C3AED).withAlpha(40)
+      ..color = AppPalette.primaryBlue.withAlpha(40)
       ..style = PaintingStyle.fill;
 
     const double step = 20.0;

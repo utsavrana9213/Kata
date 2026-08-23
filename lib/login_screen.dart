@@ -33,14 +33,10 @@ class _LoginScreenState extends State<LoginScreen>
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
   final _pincodeController = TextEditingController();
-  final _loginPhoneController = TextEditingController();
-  final _otpController = TextEditingController();
 
   bool _isLoading = false;
   bool _isLoginMode = true;
   bool _obscurePassword = true;
-  int _loginMethodIndex = 0; // 0=email, 1=phone otp, 2=whatsapp otp
-  bool _otpSent = false;
   String _signupRole = 'user';
   bool _showOptionalSignupDetails = false;
   late AnimationController _animationController;
@@ -51,16 +47,10 @@ class _LoginScreenState extends State<LoginScreen>
     super.initState();
     if (widget.vendorLogin || widget.adminLogin) {
       _isLoginMode = true;
-      _loginMethodIndex = 0;
-      _otpSent = false;
-      _otpController.clear();
     }
     if (!widget.vendorLogin && !widget.adminLogin && widget.startInSignup) {
       _isLoginMode = false;
       _signupRole = widget.initialSignupRole;
-      _loginMethodIndex = 0;
-      _otpSent = false;
-      _otpController.clear();
     }
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -99,13 +89,7 @@ class _LoginScreenState extends State<LoginScreen>
     _cityController.dispose();
     _stateController.dispose();
     _pincodeController.dispose();
-    _loginPhoneController.dispose();
-    _otpController.dispose();
     super.dispose();
-  }
-
-  String _otpChannel() {
-    return _loginMethodIndex == 2 ? 'whatsapp' : 'sms';
   }
 
   bool _isTestValue(String value) => value.trim().toLowerCase() == 'test';
@@ -137,8 +121,9 @@ class _LoginScreenState extends State<LoginScreen>
                       controller: nameController,
                       decoration: const InputDecoration(labelText: 'Name'),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty)
+                        if (v == null || v.trim().isEmpty) {
                           return 'Please enter name';
+                        }
                         return null;
                       },
                     ),
@@ -149,9 +134,12 @@ class _LoginScreenState extends State<LoginScreen>
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
                         final s = (v ?? '').trim();
-                        if (s.isEmpty) return 'Please enter email';
-                        if (!s.contains('@'))
+                        if (s.isEmpty) {
+                          return 'Please enter email';
+                        }
+                        if (!s.contains('@')) {
                           return 'Please enter a valid email';
+                        }
                         return null;
                       },
                     ),
@@ -170,10 +158,12 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty)
+                        if (v == null || v.isEmpty) {
                           return 'Please enter password';
-                        if (v.length < 6)
+                        }
+                        if (v.length < 6) {
                           return 'Password must be at least 6 characters';
+                        }
                         return null;
                       },
                     ),
@@ -191,8 +181,9 @@ class _LoginScreenState extends State<LoginScreen>
                   onPressed: submitting
                       ? null
                       : () async {
-                          if (!(formKey.currentState?.validate() ?? false))
+                          if (!(formKey.currentState?.validate() ?? false)) {
                             return;
+                          }
                           final dialogNav = Navigator.of(dialogContext);
                           final messenger = ScaffoldMessenger.of(context);
                           setDialogState(() => submitting = true);
@@ -243,51 +234,6 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  Future<void> _sendOtp() async {
-    final phone = _loginPhoneController.text.trim();
-    if (!_isTestValue(phone) && (phone.isEmpty || phone.length < 10)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid phone number'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      final result = await ApiService().requestOtp(
-        channel: _otpChannel(),
-        phone: phone,
-      );
-      if (!mounted) return;
-      if (result['status'] == 'success') {
-        setState(() => _otpSent = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('OTP sent successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Failed to send OTP'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -299,28 +245,20 @@ class _LoginScreenState extends State<LoginScreen>
       Map<String, dynamic> result;
 
       if (_isLoginMode) {
-        if (_loginMethodIndex == 0) {
-          if (widget.adminLogin) {
-            result = await ApiService().adminLogin(
-              _emailController.text.trim(),
-              _passwordController.text,
-            );
-          } else if (widget.vendorLogin) {
-            result = await ApiService().vendorLogin(
-              _emailController.text.trim(),
-              _passwordController.text,
-            );
-          } else {
-            result = await ApiService().login(
-              _emailController.text.trim(),
-              _passwordController.text,
-            );
-          }
+        if (widget.adminLogin) {
+          result = await ApiService().adminLogin(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+        } else if (widget.vendorLogin) {
+          result = await ApiService().vendorLogin(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
         } else {
-          result = await ApiService().verifyOtp(
-            channel: _otpChannel(),
-            phone: _loginPhoneController.text.trim(),
-            otp: _otpController.text.trim(),
+          result = await ApiService().login(
+            _emailController.text.trim(),
+            _passwordController.text,
           );
         }
       } else {
@@ -494,68 +432,6 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                       const SizedBox(height: 32),
 
-                      if (_isLoginMode && !isVendor && !isAdmin) ...[
-                        ToggleButtons(
-                          isSelected: [
-                            _loginMethodIndex == 0,
-                            _loginMethodIndex == 1,
-                            _loginMethodIndex == 2,
-                          ],
-                          onPressed: _isLoading
-                              ? null
-                              : (i) {
-                                  setState(() {
-                                    _loginMethodIndex = i;
-                                    _otpSent = false;
-                                    _otpController.clear();
-                                  });
-                                },
-                          borderRadius: BorderRadius.circular(12),
-                          constraints: const BoxConstraints(minHeight: 44),
-                          color: AppPalette.deepBlue,
-                          selectedColor: Colors.white,
-                          fillColor: AppPalette.fusionPurple,
-                          borderColor: AppPalette.deepBlue.withAlpha(40),
-                          selectedBorderColor: AppPalette.fusionPurple,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              child: Text(
-                                'Email',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              child: Text(
-                                'Phone OTP',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              child: Text(
-                                'WhatsApp OTP',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
                       // Login/Signup Fields
                       if (!_isLoginMode && !isVendor && !isAdmin) ...[
                         Container(
@@ -612,8 +488,9 @@ class _LoginScreenState extends State<LoginScreen>
                                 label: 'Full Name *',
                                 icon: Icons.person,
                                 validator: (value) {
-                                  if (value == null || value.trim().isEmpty)
+                                  if (value == null || value.trim().isEmpty) {
                                     return 'Full name is required';
+                                  }
                                   return null;
                                 },
                               ),
@@ -625,10 +502,12 @@ class _LoginScreenState extends State<LoginScreen>
                                 keyboardType: TextInputType.phone,
                                 validator: (value) {
                                   final v = (value ?? '').trim();
-                                  if (v.isEmpty)
+                                  if (v.isEmpty) {
                                     return 'Mobile number is required';
-                                  if (v.length < 10)
+                                  }
+                                  if (v.length < 10) {
                                     return 'Enter a valid mobile number';
+                                  }
                                   return null;
                                 },
                               ),
@@ -777,9 +656,12 @@ class _LoginScreenState extends State<LoginScreen>
                                         keyboardType: TextInputType.number,
                                         validator: (value) {
                                           final v = (value ?? '').trim();
-                                          if (v.isEmpty) return null;
-                                          if (v.length != 6)
+                                          if (v.isEmpty) {
+                                            return null;
+                                          }
+                                          if (v.length != 6) {
                                             return 'Enter a valid 6-digit pincode';
+                                          }
                                           return null;
                                         },
                                       ),
@@ -821,111 +703,57 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: 10),
                       ],
 
-                      if (_isLoginMode &&
-                          _loginMethodIndex != 0 &&
-                          !isVendor &&
-                          !isAdmin) ...[
-                        _buildTextField(
-                          controller: _loginPhoneController,
-                          label: 'Phone Number',
-                          icon: Icons.phone,
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your phone number';
-                            }
-                            if (_isTestValue(value)) {
-                              return null;
-                            }
-                            if (value.trim().length < 10) {
-                              return 'Please enter a valid phone number';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: _isLoading ? null : _sendOtp,
-                            child: Text(_otpSent ? 'Resend OTP' : 'Send OTP'),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          controller: _otpController,
-                          label: 'OTP',
-                          icon: Icons.password,
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter OTP';
-                            }
-                            if (_isTestValue(value)) {
-                              return null;
-                            }
-                            if (value.trim().length < 4) {
-                              return 'Please enter a valid OTP';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-
                       // Common Fields (Email & Password)
-                      if (!_isLoginMode || _loginMethodIndex == 0) ...[
-                        _buildTextField(
-                          controller: _emailController,
-                          label: 'Email Address *',
-                          icon: Icons.email,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (_isTestValue(value)) {
-                              return null;
-                            }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
+                      _buildTextField(
+                        controller: _emailController,
+                        label: 'Email Address *',
+                        icon: Icons.email,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (_isTestValue(value)) {
                             return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          controller: _passwordController,
-                          label: 'Password *',
-                          icon: Icons.lock,
-                          obscureText: _obscurePassword,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: Colors.grey[600],
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
+                          }
+                          if (!value.contains('@')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        controller: _passwordController,
+                        label: 'Password *',
+                        icon: Icons.lock,
+                        obscureText: _obscurePassword,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.grey[600],
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            if (_isTestValue(value)) {
-                              return null;
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
                           },
                         ),
-                      ],
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          if (_isTestValue(value)) {
+                            return null;
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
 
                       const SizedBox(height: 32),
 
@@ -959,9 +787,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       : (isVendor
                                             ? 'Login as Vendor'
                                             : (_isLoginMode
-                                                  ? (_loginMethodIndex == 0
-                                                        ? 'Sign In'
-                                                        : 'Verify & Sign In')
+                                                  ? 'Sign In'
                                                   : 'Create Account')),
                                   style: GoogleFonts.poppins(
                                     fontSize: 18,

@@ -18,6 +18,7 @@ class ApiService {
   static String? _authToken;
   static Map<String, dynamic>? _currentUser;
   static bool _sellerOnboarded = false;
+  static final Map<String, List<Map<String, dynamic>>> _subcategoryCache = {};
 
   static bool _isTestCredential(String value) =>
       value.trim().toLowerCase() == 'test';
@@ -234,9 +235,12 @@ class ApiService {
         _sellerOnboarded = true;
         _currentUser!['role'] = 'seller';
         final prefs = await SharedPreferences.getInstance();
-        if (_authToken != null) await prefs.setString(_tokenKey, _authToken!);
-        if (_currentUser != null)
+        if (_authToken != null) {
+          await prefs.setString(_tokenKey, _authToken!);
+        }
+        if (_currentUser != null) {
           await prefs.setString(_userKey, json.encode(_currentUser));
+        }
         await prefs.setBool(_sellerKey, true);
       }
 
@@ -305,9 +309,12 @@ class ApiService {
         _sellerOnboarded = false;
         _currentUser!['role'] = 'admin';
         final prefs = await SharedPreferences.getInstance();
-        if (_authToken != null) await prefs.setString(_tokenKey, _authToken!);
-        if (_currentUser != null)
+        if (_authToken != null) {
+          await prefs.setString(_tokenKey, _authToken!);
+        }
+        if (_currentUser != null) {
           await prefs.setString(_userKey, json.encode(_currentUser));
+        }
         await prefs.setBool(_sellerKey, false);
       }
 
@@ -391,9 +398,12 @@ class ApiService {
         _sellerOnboarded = false;
         _currentUser!['role'] = 'admin';
         final prefs = await SharedPreferences.getInstance();
-        if (_authToken != null) await prefs.setString(_tokenKey, _authToken!);
-        if (_currentUser != null)
+        if (_authToken != null) {
+          await prefs.setString(_tokenKey, _authToken!);
+        }
+        if (_currentUser != null) {
           await prefs.setString(_userKey, json.encode(_currentUser));
+        }
         await prefs.setBool(_sellerKey, false);
       }
 
@@ -1202,6 +1212,8 @@ class ApiService {
   Future<List<Map<String, dynamic>>> fetchSubcategories(
     String categoryId,
   ) async {
+    final cached = _subcategoryCache[categoryId];
+    if (cached != null) return cached;
     // Try JSON POST first; if that fails or returns empty, fallback to GET with query params
     try {
       final postResp = await http.post(
@@ -1213,7 +1225,9 @@ class ApiService {
         final data = json.decode(postResp.body);
         final list = (data['subcategories'] ?? data['data']) as List?;
         if (data['status'] == 'success' && list != null) {
-          return List<Map<String, dynamic>>.from(list);
+          final result = List<Map<String, dynamic>>.from(list);
+          _subcategoryCache[categoryId] = result;
+          return result;
         }
       }
     } catch (_) {}
@@ -1228,7 +1242,9 @@ class ApiService {
         final data = json.decode(getResp.body);
         final list = (data['subcategories'] ?? data['data']) as List?;
         if (data['status'] == 'success' && list != null) {
-          return List<Map<String, dynamic>>.from(list);
+          final result = List<Map<String, dynamic>>.from(list);
+          _subcategoryCache[categoryId] = result;
+          return result;
         }
       }
     } catch (_) {}

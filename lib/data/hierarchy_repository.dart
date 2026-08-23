@@ -26,6 +26,21 @@ class HierarchyRepository {
   final Map<String, Map<String, String>> _subcategoryNamesByCategory = {};
   final Map<String, Map<String, List<Service>>> _servicesByCatSub = {};
 
+  bool _looksLikeId(String value) => RegExp(r'^\d+$').hasMatch(value.trim());
+
+  String? categoryNameFor(String? idOrName) {
+    final value = (idOrName ?? '').trim();
+    if (value.isEmpty) return null;
+    return _categoryNames[value] ?? (_looksLikeId(value) ? null : value);
+  }
+
+  String? subcategoryNameFor(String? categoryId, String? idOrName) {
+    final value = (idOrName ?? '').trim();
+    if (value.isEmpty) return null;
+    final map = _subcategoryNamesByCategory[(categoryId ?? '').trim()];
+    return map?[value] ?? (_looksLikeId(value) ? null : value);
+  }
+
   Future<void> init() async {
     if (_initialized) return;
     final csvString = await rootBundle.loadString('services_rows.csv');
@@ -42,10 +57,18 @@ class HierarchyRepository {
       for (var j = 0; j < headers.length; j++) {
         json[headers[j]] = row[j];
       }
-      final categoryId = (json['category_id'] ?? json['categorys'] ?? '').toString().trim();
+      final categoryId = (json['category_id'] ?? json['categorys'] ?? '')
+          .toString()
+          .trim();
       if (categoryId.isEmpty) continue;
       final subStr = (json['subcategory'] ?? '').toString().trim();
-      final subs = subStr.isEmpty ? <String>[''] : subStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      final subs = subStr.isEmpty
+          ? <String>['']
+          : subStr
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
       final service = Service.fromJson(json);
       final catMap = _servicesByCatSub.putIfAbsent(categoryId, () => {});
       if (subs.isEmpty) {
@@ -63,7 +86,7 @@ class HierarchyRepository {
       if (data['categories'] is List) {
         for (final c in (data['categories'] as List)) {
           final id = (c['id'] ?? '').toString();
-          final label = (c['category_name'] ?? c['name'] ?? 'Category $id').toString();
+          final label = (c['category_name'] ?? c['name'] ?? '').toString();
           if (id.isNotEmpty) _categoryNames[id] = label;
         }
       }
@@ -78,7 +101,9 @@ class HierarchyRepository {
       final nb = _categoryNames[b] ?? 'Category $b';
       return na.toLowerCase().compareTo(nb.toLowerCase());
     });
-    return ids.map((id) => CategoryNode(id, _categoryNames[id] ?? 'Category $id')).toList();
+    return ids
+        .map((id) => CategoryNode(id, _categoryNames[id] ?? 'Category'))
+        .toList();
   }
 
   Future<List<SubcategoryNode>> getSubcategories(String categoryId) async {
@@ -89,14 +114,17 @@ class HierarchyRepository {
         final map = <String, String>{};
         for (final s in subs) {
           final id = (s['id'] ?? '').toString();
-          final name = (s['subname'] ?? s['subcategory_name'] ?? s['name'] ?? 'Subcategory $id').toString();
-          if (id.isNotEmpty) map[id] = name;
+          final name =
+              (s['subname'] ?? s['subcategory_name'] ?? s['name'] ?? '')
+                  .toString();
+          if (id.isNotEmpty && name.trim().isNotEmpty) map[id] = name;
         }
         _subcategoryNamesByCategory[categoryId] = map;
       } catch (_) {}
 
       // If still empty, derive IDs from available services (server data) as a fallback
-      if ((_subcategoryNamesByCategory[categoryId] == null || _subcategoryNamesByCategory[categoryId]!.isEmpty)) {
+      if ((_subcategoryNamesByCategory[categoryId] == null ||
+          _subcategoryNamesByCategory[categoryId]!.isEmpty)) {
         try {
           final app = await ApiService().fetchAppData();
           final list = (app['services'] as List?) ?? const [];
@@ -111,26 +139,31 @@ class HierarchyRepository {
             }
           }
           if (ids.isNotEmpty) {
-            final map = <String, String>{};
-            for (final id in ids) {
-              map[id] = 'Subcategory $id';
-            }
-            _subcategoryNamesByCategory[categoryId] = map;
+            _subcategoryNamesByCategory[categoryId] = {
+              for (final id in ids) id: '',
+            };
           }
         } catch (_) {}
       }
     }
     // Union of subcategories known from CSV services and server names
     final csvIds = (_servicesByCatSub[categoryId]?.keys.toList() ?? <String>[]);
-    final serverIds = (_subcategoryNamesByCategory[categoryId]?.keys.toList() ?? <String>[]);
+    final serverIds =
+        (_subcategoryNamesByCategory[categoryId]?.keys.toList() ?? <String>[]);
     final ids = <String>{...csvIds, ...serverIds}.toList();
     ids.sort((a, b) {
-      final na = _subcategoryNamesByCategory[categoryId]?[a] ?? (a.isEmpty ? 'All' : 'Subcategory $a');
-      final nb = _subcategoryNamesByCategory[categoryId]?[b] ?? (b.isEmpty ? 'All' : 'Subcategory $b');
+      final na =
+          _subcategoryNamesByCategory[categoryId]?[a] ??
+          (a.isEmpty ? 'All' : '');
+      final nb =
+          _subcategoryNamesByCategory[categoryId]?[b] ??
+          (b.isEmpty ? 'All' : '');
       return na.toLowerCase().compareTo(nb.toLowerCase());
     });
     return ids.map((id) {
-      final name = _subcategoryNamesByCategory[categoryId]?[id] ?? (id.isEmpty ? 'All' : 'Subcategory $id');
+      final name =
+          _subcategoryNamesByCategory[categoryId]?[id] ??
+          (id.isEmpty ? 'All' : '');
       return SubcategoryNode(id, name);
     }).toList();
   }
@@ -145,5 +178,22 @@ class HierarchyRepository {
       return all;
     }
     return List<Service>.from(catMap[subcategoryId] ?? const []);
+  }
+
+  /// Offline-safe source for the home screen when the app-data endpoint is
+  /// unavailable or returns an incomplete services payload.
+  List<Service> getAllServices() {
+    final unique = <String, Service>{};
+    for (final category in _servicesByCatSub.values) {
+      for (final services in category.values) {
+        for (final service in services) {
+          if (service.companyName.isNotEmpty &&
+              service.serviceName.isNotEmpty) {
+            unique.putIfAbsent(service.id, () => service);
+          }
+        }
+      }
+    }
+    return unique.values.toList();
   }
 }

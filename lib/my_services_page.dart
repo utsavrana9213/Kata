@@ -4,6 +4,7 @@ import 'package:servekeen/add_service_page.dart';
 import 'package:servekeen/api_service.dart';
 import 'package:servekeen/service_model.dart';
 import 'package:servekeen/service_detail_page.dart';
+import 'package:servekeen/theme/palette.dart';
 
 class MyServicesPage extends StatefulWidget {
   const MyServicesPage({super.key});
@@ -36,7 +37,9 @@ class _MyServicesPageState extends State<MyServicesPage> {
         for (final c in categories) {
           if (c is Map) {
             final id = (c['id'] ?? '').toString().trim();
-            final name = (c['category_name'] ?? c['name'] ?? '').toString().trim();
+            final name = (c['category_name'] ?? c['name'] ?? '')
+                .toString()
+                .trim();
             if (id.isNotEmpty && name.isNotEmpty) {
               _categoryNames[id] = name;
             }
@@ -103,7 +106,9 @@ class _MyServicesPageState extends State<MyServicesPage> {
       _updatingActive.add(s.id);
       _activeOverrides[s.id] = value;
     });
-    final res = await ApiService().updateService(s.id, {'is_active': value ? 1 : 0});
+    final res = await ApiService().updateService(s.id, {
+      'is_active': value ? 1 : 0,
+    });
     if (!mounted) return;
     if (res['status'] == 'success') {
       setState(() {
@@ -118,15 +123,15 @@ class _MyServicesPageState extends State<MyServicesPage> {
     });
     final msg = (res['message'] ?? 'Failed to update status').toString();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg, style: GoogleFonts.poppins())),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg, style: GoogleFonts.poppins())));
   }
 
   Future<void> _openEdit(Service s) async {
-    final updated = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => AddServicePage(service: s)),
-    );
+    final updated = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => AddServicePage(service: s)));
     if (!mounted) return;
     if (updated == true) {
       await _load();
@@ -141,10 +146,23 @@ class _MyServicesPageState extends State<MyServicesPage> {
   }
 
   Widget _buildServiceCard(Service s) {
-    final titleStyle = GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.black);
-    final metaStyle = GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87);
-    final priceStyle = GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: const Color(0xFF2F80ED));
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 20,
+      fontWeight: FontWeight.w700,
+      color: Colors.black,
+    );
+    final metaStyle = GoogleFonts.poppins(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: Colors.black87,
+    );
+    final priceStyle = GoogleFonts.poppins(
+      fontSize: 22,
+      fontWeight: FontWeight.w700,
+      color: const Color(0xFF2F80ED),
+    );
     final imageUrl = s.primaryImageUrl;
+    final localAsset = s.localAssetImage;
     final isUpdating = _updatingActive.contains(s.id);
     final active = _isActive(s);
     final tier = s.priceTier;
@@ -166,11 +184,21 @@ class _MyServicesPageState extends State<MyServicesPage> {
                   AspectRatio(
                     aspectRatio: 16 / 9,
                     child: imageUrl == null
-                        ? Container(color: Colors.grey.shade200)
+                        ? Container(
+                            color: Colors.grey.shade200,
+                            child: localAsset != null
+                                ? Image.asset(localAsset, fit: BoxFit.contain)
+                                : null,
+                          )
                         : Image.network(
                             imageUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade200),
+                            errorBuilder: (_, __, ___) => Container(
+                              color: Colors.grey.shade200,
+                              child: localAsset != null
+                                  ? Image.asset(localAsset, fit: BoxFit.contain)
+                                  : null,
+                            ),
                           ),
                   ),
                   Positioned(
@@ -197,18 +225,32 @@ class _MyServicesPageState extends State<MyServicesPage> {
               runSpacing: 10,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text(_categoryLabel(s), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.black87)),
+                  child: Text(
+                    _categoryLabel(s),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
                 ),
                 if (tier != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
-                      color: s.isPremium ? Colors.deepPurple : Colors.grey.shade200,
+                      color: s.isPremium
+                          ? AppPalette.fusionPurple
+                          : Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -224,9 +266,7 @@ class _MyServicesPageState extends State<MyServicesPage> {
             const SizedBox(height: 14),
             Row(
               children: [
-                Expanded(
-                  child: Text(_formatPrice(s), style: priceStyle),
-                ),
+                Expanded(child: Text(_formatPrice(s), style: priceStyle)),
                 Text('Active', style: metaStyle),
                 const SizedBox(width: 10),
                 AbsorbPointer(
@@ -247,10 +287,15 @@ class _MyServicesPageState extends State<MyServicesPage> {
                   child: OutlinedButton.icon(
                     onPressed: () => _openEdit(s),
                     icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: Text('Edit', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    label: Text(
+                      'Edit',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       foregroundColor: Colors.black87,
                       side: BorderSide(color: Colors.grey.shade300),
                       backgroundColor: Colors.white,
@@ -262,10 +307,15 @@ class _MyServicesPageState extends State<MyServicesPage> {
                   child: OutlinedButton.icon(
                     onPressed: () => _openDetails(s),
                     icon: const Icon(Icons.remove_red_eye_outlined, size: 18),
-                    label: Text('View Details', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    label: Text(
+                      'View Details',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       foregroundColor: Colors.black87,
                       side: BorderSide(color: Colors.grey.shade300),
                       backgroundColor: Colors.white,
@@ -281,9 +331,9 @@ class _MyServicesPageState extends State<MyServicesPage> {
   }
 
   Future<void> _openAdd() async {
-    final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const AddServicePage()),
-    );
+    final created = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const AddServicePage()));
     if (!mounted) return;
     if (created == true) {
       await _load();
@@ -294,7 +344,10 @@ class _MyServicesPageState extends State<MyServicesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Services', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(
+          'My Services',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
         actions: [
           IconButton(
             onPressed: _loading ? null : _load,
@@ -312,36 +365,46 @@ class _MyServicesPageState extends State<MyServicesPage> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? ListView(
-                    children: [
-                      const SizedBox(height: 120),
-                      Center(child: Text(_error!, style: GoogleFonts.poppins(color: Colors.red))),
-                    ],
-                  )
-                : _services.isEmpty
-                    ? ListView(
-                        children: [
-                          const SizedBox(height: 120),
-                          Center(child: Text('No services yet', style: GoogleFonts.poppins(color: Colors.grey[700]))),
-                          const SizedBox(height: 12),
-                          Center(
-                            child: OutlinedButton.icon(
-                              onPressed: _openAdd,
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add your first service'),
-                            ),
-                          ),
-                        ],
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _services.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 14),
-                        itemBuilder: (context, index) {
-                          final s = _services[index];
-                          return _buildServiceCard(s);
-                        },
-                      ),
+            ? ListView(
+                children: [
+                  const SizedBox(height: 120),
+                  Center(
+                    child: Text(
+                      _error!,
+                      style: GoogleFonts.poppins(color: Colors.red),
+                    ),
+                  ),
+                ],
+              )
+            : _services.isEmpty
+            ? ListView(
+                children: [
+                  const SizedBox(height: 120),
+                  Center(
+                    child: Text(
+                      'No services yet',
+                      style: GoogleFonts.poppins(color: Colors.grey[700]),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: OutlinedButton.icon(
+                      onPressed: _openAdd,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add your first service'),
+                    ),
+                  ),
+                ],
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(12),
+                itemCount: _services.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 14),
+                itemBuilder: (context, index) {
+                  final s = _services[index];
+                  return _buildServiceCard(s);
+                },
+              ),
       ),
     );
   }

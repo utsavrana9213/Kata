@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:servekeen/service_model.dart';
 import 'package:servekeen/service_detail_page.dart';
+import 'package:servekeen/theme/palette.dart';
 
 class AllServicesPage extends StatelessWidget {
   final List<Service> services;
@@ -15,32 +16,68 @@ class AllServicesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final background = isDark
+        ? const Color(0xFF0D1218)
+        : AppPalette.softBlendBackground;
+    final appBarSurface = isDark ? const Color(0xFF151F2A) : Colors.white;
+    final cardSurface = isDark ? const Color(0xFF1B2836) : Colors.white;
+    final mutedSurface = isDark
+        ? const Color(0xFF223142)
+        : Colors.grey.shade200;
+    final textPrimary = isDark ? const Color(0xFFEAF2FC) : AppPalette.deepBlue;
+    final textSecondary = isDark
+        ? const Color(0xFFB4C3D5)
+        : AppPalette.deepBlue.withAlpha(150);
+    final brandColor = isDark
+        ? const Color(0xFF75AFFF)
+        : AppPalette.fusionPurple;
+    final borderColor = isDark
+        ? Colors.white.withAlpha(24)
+        : AppPalette.deepBlue.withAlpha(26);
     return Scaffold(
+      backgroundColor: background,
       appBar: AppBar(
-        title: Text(title),
-        elevation: 1,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        title: Text(
+          title,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: appBarSurface,
+        foregroundColor: textPrimary,
       ),
       body: services.isEmpty
-          ? const Center(child: Text('No services available'))
+          ? Center(
+              child: Text(
+                'No services available',
+                style: GoogleFonts.poppins(color: textSecondary),
+              ),
+            )
           : ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: services.length,
               itemBuilder: (context, index) {
                 final service = services[index];
                 final imgPath = service.primaryImageUrl ?? '';
+                final localAsset = service.localAssetImage;
                 final tier = service.priceTier;
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                  color: cardSurface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: borderColor),
+                  ),
                   child: InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => ServiceDetailPage(service: service)),
+                        MaterialPageRoute(
+                          builder: (_) => ServiceDetailPage(service: service),
+                        ),
                       );
                     },
                     borderRadius: BorderRadius.circular(12),
@@ -48,18 +85,32 @@ class AllServicesPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ClipRRect(
-                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+                          borderRadius: const BorderRadius.horizontal(
+                            left: Radius.circular(12),
+                          ),
                           child: Container(
                             width: 120,
                             height: 120,
-                            color: Colors.grey[200],
+                            color: mutedSurface,
                             child: imgPath.isNotEmpty
                                 ? Image.network(
                                     imgPath,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image),
+                                    errorBuilder: (ctx, err, stack) =>
+                                        localAsset != null
+                                        ? Image.asset(
+                                            localAsset,
+                                            fit: BoxFit.contain,
+                                          )
+                                        : const Icon(Icons.broken_image),
                                   )
-                                : const Icon(Icons.image, size: 40, color: Colors.grey),
+                                : localAsset != null
+                                ? Image.asset(localAsset, fit: BoxFit.contain)
+                                : const Icon(
+                                    Icons.image,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  ),
                           ),
                         ),
                         Expanded(
@@ -73,6 +124,7 @@ class AllServicesPage extends StatelessWidget {
                                   style: GoogleFonts.poppins(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
+                                    color: textPrimary,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -81,7 +133,7 @@ class AllServicesPage extends StatelessWidget {
                                 Text(
                                   service.companyName,
                                   style: GoogleFonts.poppins(
-                                    color: Colors.grey[600],
+                                    color: textSecondary,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -92,30 +144,45 @@ class AllServicesPage extends StatelessWidget {
                                   runSpacing: 6,
                                   children: [
                                     Text(
-                                      service.price != null ? '₹${service.price!.toStringAsFixed(0)}' : 'Price on Request',
+                                      service.price != null
+                                          ? '₹${service.price!.toStringAsFixed(0)}'
+                                          : 'Price on Request',
                                       style: GoogleFonts.poppins(
-                                        color: Colors.green,
+                                        color: brandColor,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    if (service.perPrice != null && service.perPrice!.isNotEmpty)
+                                    if (service.perPrice != null &&
+                                        service.perPrice!.isNotEmpty)
                                       Text(
                                         ' / ${service.perPrice}',
-                                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          color: textSecondary,
+                                        ),
                                       ),
                                     if (tier != null)
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: service.isPremium ? Colors.deepPurple : Colors.grey.shade200,
-                                          borderRadius: BorderRadius.circular(999),
+                                          color: service.isPremium
+                                              ? AppPalette.fusionPurple
+                                              : mutedSurface,
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
                                         ),
                                         child: Text(
                                           tier,
                                           style: GoogleFonts.poppins(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
-                                            color: service.isPremium ? Colors.white : Colors.black87,
+                                            color: service.isPremium
+                                                ? Colors.white
+                                                : textPrimary,
                                           ),
                                         ),
                                       ),
@@ -126,12 +193,19 @@ class AllServicesPage extends StatelessWidget {
                                     padding: const EdgeInsets.only(top: 6),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                        Icon(
+                                          Icons.location_on,
+                                          size: 14,
+                                          color: textSecondary,
+                                        ),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
                                             service.locations!,
-                                            style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              color: textSecondary,
+                                            ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),

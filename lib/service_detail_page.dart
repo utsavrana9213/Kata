@@ -39,6 +39,37 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
   bool _ratingStatusIsError = false;
   int _imageIndex = 0;
 
+  bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
+  Color get _backgroundColor =>
+      _isDarkMode ? Colors.black : AppPalette.softBlendBackground;
+  Color get _appBarSurface => _isDarkMode ? Colors.black : Colors.white;
+  Color get _cardSurface =>
+      _isDarkMode ? const Color(0xFF121212) : Colors.white;
+  Color get _fieldSurface =>
+      _isDarkMode ? const Color(0xFF151F2A) : Colors.white;
+  Color get _mutedSurface =>
+      _isDarkMode ? const Color(0xFF223142) : AppPalette.lightBlueTint;
+  Color get _textPrimary =>
+      _isDarkMode ? const Color(0xFFEAF2FC) : AppPalette.deepBlue;
+  Color get _textSecondary => _isDarkMode
+      ? const Color(0xFFB4C3D5)
+      : AppPalette.deepBlue.withAlpha(150);
+  Color get _brandColor =>
+      _isDarkMode ? const Color(0xFF75AFFF) : AppPalette.fusionPurple;
+  Color get _borderColor => _isDarkMode
+      ? Colors.white.withAlpha(24)
+      : AppPalette.deepBlue.withAlpha(26);
+  Color get _shadowColor => _isDarkMode
+      ? Colors.black.withAlpha(70)
+      : AppPalette.fusionPurple.withAlpha(14);
+  List<Color> get _pageGradientColors => _isDarkMode
+      ? const [Colors.black, Colors.black]
+      : const [
+          AppPalette.softBlendBackground,
+          AppPalette.lightBlueTint,
+          AppPalette.lightPinkTint,
+        ];
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +79,9 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     _avgRating = widget.service.avrRat;
     _ratingStatusText = 'Tap a star to rate';
     final u = ApiService().currentUser;
-    final name = (u?['name'] ?? u?['username'] ?? u?['full_name'] ?? '').toString().trim();
+    final name = (u?['name'] ?? u?['username'] ?? u?['full_name'] ?? '')
+        .toString()
+        .trim();
     if (name.isNotEmpty) _ratingNameController.text = name;
     _ratingReviewController.addListener(() {
       final next = _countWords(_ratingReviewController.text);
@@ -106,7 +139,10 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     final nameGuess = _ratingNameController.text.trim().toLowerCase();
     if (nameGuess.isNotEmpty) {
       for (final r in reviews) {
-        final u = (r['username'] ?? r['name'] ?? '').toString().trim().toLowerCase();
+        final u = (r['username'] ?? r['name'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
         if (u.isNotEmpty && u == nameGuess) return r;
       }
     }
@@ -131,9 +167,14 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     final res = await ApiService().fetchServiceRatingSummary(widget.service.id);
     if (!mounted) return;
     if (res['status'] == 'success') {
-      final payload = (res['data'] ?? res['rating'] ?? res['stats'] ?? res) as Object?;
+      final payload =
+          (res['data'] ?? res['rating'] ?? res['stats'] ?? res) as Object?;
       final data = res['data'];
-      final reviewsPayload = (res['reviews'] ?? (data is Map ? data['reviews'] : null) ?? (payload is Map ? payload['reviews'] : null)) as Object?;
+      final reviewsPayload =
+          (res['reviews'] ??
+                  (data is Map ? data['reviews'] : null) ??
+                  (payload is Map ? payload['reviews'] : null))
+              as Object?;
       Map<String, dynamic>? m;
       if (payload is Map) m = payload.cast<String, dynamic>();
       final parsedReviews = <Map<String, dynamic>>[];
@@ -144,13 +185,33 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
       }
       if (m != null) {
         setState(() {
-          final nextMyRating = _toInt(m?['my_rating'] ?? m?['user_rating'] ?? m?['rating']) ?? _myRating;
-          _avgRating = _toDouble(m?['average'] ?? m?['avg'] ?? m?['avg_rating'] ?? m?['avr_rat']) ?? _avgRating;
-          _ratingCount = _toInt(m?['count'] ?? m?['total'] ?? m?['ratings'] ?? m?['ratings_count']) ?? _ratingCount;
+          final nextMyRating =
+              _toInt(m?['my_rating'] ?? m?['user_rating'] ?? m?['rating']) ??
+              _myRating;
+          _avgRating =
+              _toDouble(
+                m?['average'] ?? m?['avg'] ?? m?['avg_rating'] ?? m?['avr_rat'],
+              ) ??
+              _avgRating;
+          _ratingCount =
+              _toInt(
+                m?['count'] ??
+                    m?['total'] ??
+                    m?['ratings'] ??
+                    m?['ratings_count'],
+              ) ??
+              _ratingCount;
           _myRating = nextMyRating;
           _serviceReviews = parsedReviews;
           _myReview = _findMyReview(parsedReviews);
-          final myText = (_myReview?['review_text'] ?? _myReview?['reviewText'] ?? _myReview?['description'] ?? _myReview?['review'] ?? '').toString().trim();
+          final myText =
+              (_myReview?['review_text'] ??
+                      _myReview?['reviewText'] ??
+                      _myReview?['description'] ??
+                      _myReview?['review'] ??
+                      '')
+                  .toString()
+                  .trim();
           if (ApiService().isLoggedIn && (nextMyRating ?? 0) > 0) {
             _showReviewForm = myText.isEmpty;
           } else {
@@ -171,7 +232,8 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     setState(() {
       _loadingRating = false;
       if (!keepStatusText) {
-        _ratingStatusText = (res['message'] ?? 'Failed to load rating').toString();
+        _ratingStatusText = (res['message'] ?? 'Failed to load rating')
+            .toString();
         _ratingStatusIsError = true;
       } else {
         _ratingStatusText = prevText;
@@ -229,7 +291,11 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     if (res['status'] == 'success') {
       final payload = (res['data'] ?? res['rating'] ?? res) as Object?;
       final data = res['data'];
-      final reviewsPayload = (res['reviews'] ?? (data is Map ? data['reviews'] : null) ?? (payload is Map ? payload['reviews'] : null)) as Object?;
+      final reviewsPayload =
+          (res['reviews'] ??
+                  (data is Map ? data['reviews'] : null) ??
+                  (payload is Map ? payload['reviews'] : null))
+              as Object?;
       if (payload is Map) {
         final m = payload.cast<String, dynamic>();
         final parsedReviews = <Map<String, dynamic>>[];
@@ -239,9 +305,19 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
           }
         }
         setState(() {
-          _avgRating = _toDouble(m['average'] ?? m['avg'] ?? m['avg_rating'] ?? m['avr_rat']) ?? _avgRating;
-          _ratingCount = _toInt(m['count'] ?? m['total'] ?? m['ratings'] ?? m['ratings_count']) ?? _ratingCount;
-          _myRating = _toInt(m['my_rating'] ?? m['user_rating'] ?? m['rating']) ?? _myRating;
+          _avgRating =
+              _toDouble(
+                m['average'] ?? m['avg'] ?? m['avg_rating'] ?? m['avr_rat'],
+              ) ??
+              _avgRating;
+          _ratingCount =
+              _toInt(
+                m['count'] ?? m['total'] ?? m['ratings'] ?? m['ratings_count'],
+              ) ??
+              _ratingCount;
+          _myRating =
+              _toInt(m['my_rating'] ?? m['user_rating'] ?? m['rating']) ??
+              _myRating;
           _serviceReviews = parsedReviews;
         });
       }
@@ -255,13 +331,16 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
       await _loadRating(keepStatusText: true);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Thanks for rating!', style: GoogleFonts.poppins())),
+        SnackBar(
+          content: Text('Thanks for rating!', style: GoogleFonts.poppins()),
+        ),
       );
       return;
     }
     setState(() {
       _submittingRating = false;
-      _ratingStatusText = (res['message'] ?? 'Failed to submit rating').toString();
+      _ratingStatusText = (res['message'] ?? 'Failed to submit rating')
+          .toString();
       _ratingStatusIsError = true;
     });
   }
@@ -277,7 +356,11 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
         if (arr is List) {
           for (final e in arr) {
             final p = e.toString();
-            if (p.isNotEmpty) list.add('images/service/${p.replaceAll('["', '').replaceAll('"]', '')}');
+            if (p.isNotEmpty) {
+              list.add(
+                'images/service/${p.replaceAll('["', '').replaceAll('"]', '')}',
+              );
+            }
           }
         } else {
           list.add(raw);
@@ -286,7 +369,9 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
         list.add(raw);
       }
     }
-    final expanded = list.map((p) => p.startsWith('http') ? p : "https://servekeen.com/$p").toList();
+    final expanded = list
+        .map((p) => p.startsWith('http') ? p : "https://servekeen.com/$p")
+        .toList();
     final unique = <String>[];
     for (final u in expanded) {
       if (!unique.contains(u)) unique.add(u);
@@ -298,30 +383,36 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
   Widget build(BuildContext context) {
     final s = widget.service;
     final derived = _deriveLatLng(s);
-    final priceStr = s.price != null ? NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(s.price) : 'Price on request';
+    final priceStr = s.price != null
+        ? NumberFormat.currency(locale: 'en_IN', symbol: '₹').format(s.price)
+        : 'Price on request';
     final avg = _avgRating ?? s.avrRat;
     return Scaffold(
+      backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: Text(s.serviceName, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppPalette.deepBlue)),
-        backgroundColor: Colors.white,
-        foregroundColor: AppPalette.deepBlue,
+        title: Text(
+          s.serviceName,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            color: _textPrimary,
+          ),
+        ),
+        backgroundColor: _appBarSurface,
+        foregroundColor: _textPrimary,
         centerTitle: true,
-        elevation: 0.5,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: Stack(
         children: [
           Positioned.fill(
             child: IgnorePointer(
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppPalette.softBlendBackground,
-                      AppPalette.lightBlueTint,
-                      AppPalette.lightPinkTint,
-                    ],
+                    colors: _pageGradientColors,
                   ),
                 ),
               ),
@@ -329,7 +420,10 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
           ),
           Positioned.fill(
             child: IgnorePointer(
-              child: Opacity(opacity: 0.06, child: CustomPaint(painter: DotGridPainter())),
+              child: Opacity(
+                opacity: _isDarkMode ? 0.045 : 0.06,
+                child: CustomPaint(painter: DotGridPainter()),
+              ),
             ),
           ),
           ListView(
@@ -342,51 +436,194 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
               _buildChips(s),
               const SizedBox(height: 12),
               _buildSectionTitle('Description'),
-              _buildCard(Text((s.description ?? s.shortDescription ?? 'No description').toString(), style: GoogleFonts.poppins(color: AppPalette.deepBlue))),
+              _buildCard(
+                Text(
+                  (s.description ?? s.shortDescription ?? 'No description')
+                      .toString(),
+                  style: GoogleFonts.poppins(color: _textPrimary),
+                ),
+              ),
               const SizedBox(height: 12),
               _buildSectionTitle('Location'),
-              _buildCard(Row(children: [const Icon(Icons.place, color: AppPalette.fusionPurple), const SizedBox(width: 8), Expanded(child: Text(s.address ?? s.locations ?? 'Not available', style: GoogleFonts.poppins(color: AppPalette.deepBlue)))])),
+              _buildCard(
+                Row(
+                  children: [
+                    Icon(Icons.place, color: _brandColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        s.address ?? s.locations ?? 'Not available',
+                        style: GoogleFonts.poppins(color: _textPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 12),
               _buildSectionTitle('Rating & Stats'),
-              _buildCard(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  _buildStars(avg),
-                  const SizedBox(width: 12),
-                  if (avg != null) Text(avg.toStringAsFixed(1), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppPalette.deepBlue)),
-                  if (_ratingCount != null) ...[
-                    const SizedBox(width: 8),
-                    Text('($_ratingCount)', style: GoogleFonts.poppins(color: AppPalette.deepBlue.withAlpha(150))),
+              _buildCard(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _buildStars(avg),
+                        const SizedBox(width: 12),
+                        if (avg != null)
+                          Text(
+                            avg.toStringAsFixed(1),
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              color: _textPrimary,
+                            ),
+                          ),
+                        if (_ratingCount != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '($_ratingCount)',
+                            style: GoogleFonts.poppins(color: _textSecondary),
+                          ),
+                        ],
+                        const Spacer(),
+                        if (s.viewsCont != null)
+                          Text(
+                            'Views: ${s.viewsCont}',
+                            style: GoogleFonts.poppins(color: _textSecondary),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (_showReviewForm || !_hasMyRating)
+                      _buildReviewForm()
+                    else
+                      _buildMyReviewSummary(),
                   ],
-                  const Spacer(),
-                  if (s.viewsCont != null) Text('Views: ${s.viewsCont}', style: GoogleFonts.poppins(color: AppPalette.deepBlue.withAlpha(150))),
-                ]),
-                const SizedBox(height: 12),
-                if (_showReviewForm || !_hasMyRating) _buildReviewForm() else _buildMyReviewSummary(),
-              ])),
+                ),
+              ),
               const SizedBox(height: 12),
               _buildSectionTitle('Reviews'),
               _buildCard(_buildReviews()),
               const SizedBox(height: 12),
               _buildSectionTitle('Business Info'),
-              _buildCard(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                if (s.companyName.isNotEmpty) Text(s.companyName, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppPalette.deepBlue)),
-                const SizedBox(height: 8),
-                if (s.number != null && s.number!.isNotEmpty)
-                  InkWell(onTap: () => _openPhone(s.number!), child: Row(children: [const Icon(Icons.phone, size: 16, color: AppPalette.fusionPurple), const SizedBox(width: 6), Expanded(child: Text(s.number!, style: GoogleFonts.poppins(color: AppPalette.deepBlue)))])),
-                if (s.email != null && s.email!.isNotEmpty)
-                  InkWell(onTap: () => _openEmail(s.email!), child: Row(children: [const Icon(Icons.email, size: 16, color: AppPalette.fusionPurple), const SizedBox(width: 6), Expanded(child: Text(s.email!, style: GoogleFonts.poppins(color: AppPalette.deepBlue)))])),
-                if (s.website != null && s.website!.isNotEmpty)
-                  InkWell(onTap: () => _openWebsite(s.website!), child: Row(children: [const Icon(Icons.web_asset, size: 16, color: AppPalette.fusionPurple), const SizedBox(width: 6), Expanded(child: Text(_displayWebsite(s.website!), style: GoogleFonts.poppins(color: AppPalette.deepBlue)))])),
-              ])),
+              _buildCard(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (s.companyName.isNotEmpty)
+                      Text(
+                        s.companyName,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          color: _textPrimary,
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    if (s.number != null && s.number!.isNotEmpty)
+                      InkWell(
+                        onTap: () => _openPhone(s.number!),
+                        child: Row(
+                          children: [
+                            Icon(Icons.phone, size: 16, color: _brandColor),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                s.number!,
+                                style: GoogleFonts.poppins(color: _textPrimary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (s.email != null && s.email!.isNotEmpty)
+                      InkWell(
+                        onTap: () => _openEmail(s.email!),
+                        child: Row(
+                          children: [
+                            Icon(Icons.email, size: 16, color: _brandColor),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                s.email!,
+                                style: GoogleFonts.poppins(color: _textPrimary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (s.website != null && s.website!.isNotEmpty)
+                      InkWell(
+                        onTap: () => _openWebsite(s.website!),
+                        child: Row(
+                          children: [
+                            Icon(Icons.language, size: 16, color: _brandColor),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _displayWebsite(s.website!),
+                                style: GoogleFonts.poppins(color: _textPrimary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if ([
+                      s.website,
+                      s.facebook,
+                      s.instagram,
+                      s.twitter,
+                      s.linkedin,
+                    ].any((v) => (v ?? '').trim().isNotEmpty)) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if ((s.website ?? '').trim().isNotEmpty)
+                            _socialButton(
+                              Icons.language,
+                              'Website',
+                              () => _openWebsite(s.website!),
+                            ),
+                          if ((s.facebook ?? '').trim().isNotEmpty)
+                            _socialButton(
+                              Icons.facebook,
+                              'Facebook',
+                              () => _openWebsite(s.facebook!),
+                            ),
+                          if ((s.instagram ?? '').trim().isNotEmpty)
+                            _socialButton(
+                              Icons.camera_alt_outlined,
+                              'Instagram',
+                              () => _openWebsite(s.instagram!),
+                            ),
+                          if ((s.twitter ?? '').trim().isNotEmpty)
+                            _socialButton(
+                              Icons.alternate_email,
+                              'X',
+                              () => _openWebsite(s.twitter!),
+                            ),
+                          if ((s.linkedin ?? '').trim().isNotEmpty)
+                            _socialButton(
+                              Icons.business_center_outlined,
+                              'LinkedIn',
+                              () => _openWebsite(s.linkedin!),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
               const SizedBox(height: 12),
               _buildSectionTitle('Map'),
               _buildCard(
                 derived != null
-                    ? SizedBox(
-                        height: 220,
-                        child: _buildMapOnly(derived, s),
-                      )
-                    : Container(height: 180, alignment: Alignment.center, child: const Icon(Icons.map, color: Colors.grey)),
+                    ? SizedBox(height: 220, child: _buildMapOnly(derived, s))
+                    : Container(
+                        height: 180,
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.map, color: Colors.grey),
+                      ),
               ),
             ],
           ),
@@ -426,34 +663,66 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-          Text('Your rating', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-          const Spacer(),
-          _buildRatingInput(),
-        ]),
+        Row(
+          children: [
+            Text(
+              'Your rating',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: _textPrimary,
+              ),
+            ),
+            const Spacer(),
+            _buildRatingInput(),
+          ],
+        ),
         const SizedBox(height: 12),
-        Text('Your name', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        Text(
+          'Your name',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: _textPrimary,
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: _ratingNameController,
+          style: GoogleFonts.poppins(color: _textPrimary),
           decoration: InputDecoration(
             hintText: 'Name',
+            filled: true,
+            fillColor: _fieldSurface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        Text('Description (max 100 words)', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        Text(
+          'Description (max 100 words)',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: _textPrimary,
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: _ratingReviewController,
           maxLines: 3,
+          style: GoogleFonts.poppins(color: _textPrimary),
           decoration: InputDecoration(
             hintText: 'Write your review...',
+            filled: true,
+            fillColor: _fieldSurface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
           ),
         ),
         const SizedBox(height: 6),
@@ -461,26 +730,37 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
           'Words: $_ratingReviewWords/100',
           style: GoogleFonts.poppins(
             fontSize: 12,
-            color: _ratingReviewWords > 100 ? Colors.red : Colors.black54,
-            fontWeight: _ratingReviewWords > 100 ? FontWeight.w600 : FontWeight.normal,
+            color: _ratingReviewWords > 100 ? Colors.red : _textSecondary,
+            fontWeight: _ratingReviewWords > 100
+                ? FontWeight.w600
+                : FontWeight.normal,
           ),
         ),
         const SizedBox(height: 10),
-        Row(children: [
-          const Spacer(),
-          FilledButton(
-            onPressed: (_loadingRating || _submittingRating) ? null : _submitRating,
-            child: Text('Submit', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-          ),
-        ]),
+        Row(
+          children: [
+            const Spacer(),
+            FilledButton(
+              onPressed: (_loadingRating || _submittingRating)
+                  ? null
+                  : _submitRating,
+              child: Text(
+                'Submit',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
         if ((_ratingStatusText ?? '').trim().isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(
             _ratingStatusText!.trim(),
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: _ratingStatusIsError ? Colors.red : Colors.black54,
-              fontWeight: _ratingStatusIsError ? FontWeight.w600 : FontWeight.normal,
+              color: _ratingStatusIsError ? Colors.red : _textSecondary,
+              fontWeight: _ratingStatusIsError
+                  ? FontWeight.w600
+                  : FontWeight.normal,
             ),
           ),
         ],
@@ -495,15 +775,31 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
   Widget _buildMyReviewSummary() {
     final r = _myReview;
     final rating = _myRating ?? 0;
-    final username = (r?['username'] ?? r?['name'] ?? _ratingNameController.text.trim()).toString().trim();
-    final text = (r?['review_text'] ?? r?['reviewText'] ?? r?['description'] ?? r?['review'] ?? '').toString().trim();
+    final username =
+        (r?['username'] ?? r?['name'] ?? _ratingNameController.text.trim())
+            .toString()
+            .trim();
+    final text =
+        (r?['review_text'] ??
+                r?['reviewText'] ??
+                r?['description'] ??
+                r?['review'] ??
+                '')
+            .toString()
+            .trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Text('Your review', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            Text(
+              'Your review',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: _textPrimary,
+              ),
+            ),
             const Spacer(),
             TextButton(
               onPressed: () {
@@ -512,7 +808,10 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                 if (text.isNotEmpty) _ratingReviewController.text = text;
                 setState(() => _showReviewForm = true);
               },
-              child: Text('Edit', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              child: Text(
+                'Edit',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
@@ -521,9 +820,9 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.grey.shade50,
+            color: _fieldSurface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: _borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,7 +832,10 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                   Expanded(
                     child: Text(
                       username.isEmpty ? 'User' : username,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        color: _textPrimary,
+                      ),
                     ),
                   ),
                   if (rating > 0) _buildStars(rating.toDouble()),
@@ -542,7 +844,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
               const SizedBox(height: 8),
               Text(
                 text.isEmpty ? 'No description provided.' : text,
-                style: GoogleFonts.poppins(color: Colors.black87),
+                style: GoogleFonts.poppins(color: _textSecondary),
               ),
             ],
           ),
@@ -554,42 +856,74 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
   Widget _buildReviews() {
     final list = _serviceReviews;
     if (list.isEmpty) {
-      return Text('No reviews yet', style: GoogleFonts.poppins(color: Colors.black54));
+      return Text(
+        'No reviews yet',
+        style: GoogleFonts.poppins(color: _textSecondary),
+      );
     }
     final children = <Widget>[];
     for (int i = 0; i < list.length; i++) {
       final r = list[i];
       final rating = _toInt(r['rating'] ?? r['stars']) ?? 0;
       final username = (r['username'] ?? r['name'] ?? 'User').toString();
-      final text = (r['review_text'] ?? r['reviewText'] ?? r['description'] ?? r['review'] ?? '').toString();
+      final text =
+          (r['review_text'] ??
+                  r['reviewText'] ??
+                  r['description'] ??
+                  r['review'] ??
+                  '')
+              .toString();
       if (i > 0) children.add(const Divider(height: 20));
       children.add(
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(
-              child: Text(
-                username.trim().isEmpty ? 'User' : username.trim(),
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    username.trim().isEmpty ? 'User' : username.trim(),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      color: _textPrimary,
+                    ),
+                  ),
+                ),
+                if (rating > 0) _buildStars(rating.toDouble()),
+              ],
             ),
-            if (rating > 0) _buildStars(rating.toDouble()),
-          ]),
-          if (text.trim().isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(text.trim(), style: GoogleFonts.poppins(color: Colors.black87)),
+            if (text.trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                text.trim(),
+                style: GoogleFonts.poppins(color: _textSecondary),
+              ),
+            ],
           ],
-        ]),
+        ),
       );
     }
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: children);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
   }
 
   Widget _buildImages() {
+    final localAsset = widget.service.localAssetImage;
     if (images.isEmpty) {
       return Container(
         height: 200,
-        decoration: BoxDecoration(color: AppPalette.lightBlueTint, borderRadius: BorderRadius.circular(16)),
-        child: const Center(child: Icon(Icons.image, color: Colors.grey)),
+        decoration: BoxDecoration(
+          color: _mutedSurface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: localAsset != null
+            ? Padding(
+                padding: const EdgeInsets.all(16),
+                child: Image.asset(localAsset, fit: BoxFit.contain),
+              )
+            : const Center(child: Icon(Icons.image, color: Colors.grey)),
       );
     }
     return SizedBox(
@@ -604,10 +938,27 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
               final url = images[index];
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), color: Colors.white),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: _cardSurface,
+                ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(url, fit: BoxFit.cover, errorBuilder: (ctx, err, stack) => const Center(child: Icon(Icons.broken_image, color: Colors.grey))),
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, err, stack) => Center(
+                      child: localAsset != null
+                          ? Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Image.asset(
+                                localAsset,
+                                fit: BoxFit.contain,
+                              ),
+                            )
+                          : const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
+                  ),
                 ),
               );
             },
@@ -623,7 +974,11 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                   width: active ? 10 : 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: active ? AppPalette.fusionPurple : AppPalette.deepBlue.withAlpha(60),
+                    color: active
+                        ? _brandColor
+                        : _isDarkMode
+                        ? Colors.white.withAlpha(60)
+                        : AppPalette.deepBlue.withAlpha(60),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 );
@@ -636,23 +991,54 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
   }
 
   Widget _buildHeader(Service s, String priceStr) {
-    final priceLabel = priceStr + (s.perPrice != null && s.perPrice!.isNotEmpty ? ' / ${s.perPrice}' : '');
-    return _buildCard(Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(s.serviceName, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16, color: AppPalette.deepBlue)),
-        const SizedBox(height: 6),
-        Text(s.companyName, style: GoogleFonts.poppins(color: AppPalette.deepBlue.withAlpha(150))),
-      ])),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppPalette.lightBlueTint,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: AppPalette.deepBlue.withAlpha(24)),
-        ),
-        child: Text(priceLabel, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppPalette.fusionPurple, fontSize: 12)),
+    final priceLabel =
+        priceStr +
+        (s.perPrice != null && s.perPrice!.isNotEmpty
+            ? ' / ${s.perPrice}'
+            : '');
+    return _buildCard(
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  s.serviceName,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: _textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  s.companyName,
+                  style: GoogleFonts.poppins(color: _textSecondary),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: _mutedSurface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: _borderColor),
+            ),
+            child: Text(
+              priceLabel,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                color: _brandColor,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
       ),
-    ]));
+    );
   }
 
   LatLng? _deriveLatLng(Service s) {
@@ -698,7 +1084,10 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
             Marker(
               markerId: MarkerId(s.id),
               position: pos,
-              infoWindow: InfoWindow(title: s.serviceName, snippet: s.companyName),
+              infoWindow: InfoWindow(
+                title: s.serviceName,
+                snippet: s.companyName,
+              ),
             ),
           },
           zoomControlsEnabled: false,
@@ -714,8 +1103,12 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
   Future<void> _openExternalMap(LatLng pos, Service s) async {
     ApiService().trackServiceEvent(s.id, 'tap_map');
     final label = Uri.encodeComponent(s.serviceName);
-    final geoUrl = Uri.parse('geo:${pos.latitude},${pos.longitude}?q=${pos.latitude},${pos.longitude}($label)');
-    final webUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=${pos.latitude},${pos.longitude}');
+    final geoUrl = Uri.parse(
+      'geo:${pos.latitude},${pos.longitude}?q=${pos.latitude},${pos.longitude}($label)',
+    );
+    final webUrl = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${pos.latitude},${pos.longitude}',
+    );
     if (await canLaunchUrl(geoUrl)) {
       await launchUrl(geoUrl);
       return;
@@ -731,8 +1124,77 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     if (ok) return;
     await Clipboard.setData(ClipboardData(text: number));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dialer unavailable. Number copied.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dialer unavailable. Number copied.')),
+      );
     }
+  }
+
+  Future<void> _openWhatsApp(String raw) async {
+    ApiService().trackServiceEvent(widget.service.id, 'tap_whatsapp');
+    final number = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    final message = Uri.encodeComponent(
+      'Hello, I found ${widget.service.companyName} on ServeKeen and would like to connect.',
+    );
+    final uri = Uri.parse('https://wa.me/$number?text=$message');
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('WhatsApp is unavailable on this device.'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showConnectOptions(Service service) async {
+    final number = (service.number ?? '').trim();
+    if (number.isEmpty) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: _cardSurface,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Connect with ${service.companyName}',
+                style: GoogleFonts.poppins(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: _textPrimary,
+                ),
+              ),
+              const SizedBox(height: 14),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  _openWhatsApp(number);
+                },
+                icon: const Icon(Icons.chat_outlined),
+                label: const Text('WhatsApp'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF25D366),
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  _openPhone(number);
+                },
+                icon: const Icon(Icons.phone_outlined),
+                label: const Text('Call'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _openEmail(String email) async {
@@ -742,12 +1204,18 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     if (ok) return;
     await Clipboard.setData(ClipboardData(text: email));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email app unavailable. Address copied.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email app unavailable. Address copied.')),
+      );
     }
   }
 
   String _normalizeWebsite(String url) {
     var u = url.trim();
+    if (u.isEmpty) return '';
+    if (u.contains('@') && !u.contains('/') && !u.startsWith('mailto:')) {
+      return 'mailto:$u';
+    }
     if (u.startsWith('//')) {
       u = 'https:$u';
     }
@@ -764,65 +1232,158 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
 
   Future<void> _openWebsite(String url) async {
     ApiService().trackServiceEvent(widget.service.id, 'tap_website');
-    final u = _normalizeWebsite(url);
-    final uri = Uri.parse(u);
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (ok) return;
+    final raw = url.trim();
+    final targetUrl = raw.isEmpty
+        ? 'https://servekeen.com/${widget.service.slug ?? widget.service.id}'
+        : raw;
+    final u = _normalizeWebsite(targetUrl);
+    final uri = Uri.tryParse(u);
+    if (uri == null || !uri.hasScheme) {
+      await Clipboard.setData(ClipboardData(text: u));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Invalid URL copied.')));
+      }
+      return;
+    }
+    try {
+      var ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok) {
+        ok = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+      if (!ok) {
+        ok = await launchUrl(uri);
+      }
+      if (ok) return;
+    } catch (_) {
+      try {
+        await launchUrl(uri);
+        return;
+      } catch (_) {}
+    }
     await Clipboard.setData(ClipboardData(text: u));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Browser unavailable. URL copied.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Browser unavailable. URL copied.')),
+      );
     }
   }
 
   Widget _buildChips(Service s) {
-    final cats = (s.categorys ?? '').toString();
-    final subs = (s.subcategory ?? '').toString();
-    final catLabel = (_categoryName ?? (cats.isEmpty ? 'Category' : cats));
-    final subLabels = _subNames.isNotEmpty
-        ? _subNames
-        : (subs.isEmpty ? <String>[] : subs.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList());
-    final children = <Widget>[
-      Chip(
-        label: Text(catLabel, style: GoogleFonts.poppins(color: AppPalette.deepBlue, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        shape: StadiumBorder(side: BorderSide(color: AppPalette.deepBlue.withAlpha(26))),
-      ),
-      ...subLabels.map((e) => Chip(
-            label: Text(e, style: GoogleFonts.poppins(color: AppPalette.deepBlue)),
-            backgroundColor: Colors.white,
-            shape: StadiumBorder(side: BorderSide(color: AppPalette.deepBlue.withAlpha(26))),
-          )),
-    ];
+    final isRawNumber = RegExp(r'^\d+$');
+    final isGeneric = RegExp(
+      r'^(Category|Subcategory)\s+\d+$',
+      caseSensitive: false,
+    );
+
+    String? catLabel = _categoryName;
+    if (catLabel == null ||
+        isRawNumber.hasMatch(catLabel) ||
+        isGeneric.hasMatch(catLabel)) {
+      final rawCat = (s.categorys ?? '').trim();
+      catLabel = (rawCat.isNotEmpty && !isRawNumber.hasMatch(rawCat))
+          ? rawCat
+          : null;
+    }
+
+    final subLabels = <String>[];
+    for (final name in _subNames) {
+      final trimmed = name.trim();
+      if (trimmed.isNotEmpty &&
+          !isRawNumber.hasMatch(trimmed) &&
+          !isGeneric.hasMatch(trimmed)) {
+        subLabels.add(trimmed);
+      }
+    }
+    if (subLabels.isEmpty && s.subcategory != null) {
+      final rawParts = s.subcategory!.split(',').map((e) => e.trim());
+      for (final p in rawParts) {
+        if (p.isNotEmpty &&
+            !isRawNumber.hasMatch(p) &&
+            !isGeneric.hasMatch(p)) {
+          subLabels.add(p);
+        }
+      }
+    }
+
+    final children = <Widget>[];
+    if (catLabel != null && catLabel.isNotEmpty) {
+      children.add(
+        Chip(
+          label: Text(
+            catLabel,
+            style: GoogleFonts.poppins(
+              color: _textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          backgroundColor: _cardSurface,
+          shape: StadiumBorder(side: BorderSide(color: _borderColor)),
+        ),
+      );
+    }
+    for (final sub in subLabels) {
+      children.add(
+        Chip(
+          label: Text(sub, style: GoogleFonts.poppins(color: _textPrimary)),
+          backgroundColor: _cardSurface,
+          shape: StadiumBorder(side: BorderSide(color: _borderColor)),
+        ),
+      );
+    }
+
+    if (children.isEmpty) return const SizedBox.shrink();
     return Wrap(spacing: 8, runSpacing: 8, children: children);
   }
 
   Widget _buildSectionTitle(String title) {
-    return Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppPalette.deepBlue));
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontWeight: FontWeight.w700,
+        color: _textPrimary,
+      ),
+    );
   }
 
   Future<void> _resolveCategoryAndSubs() async {
     try {
-      await HierarchyRepository().init();
+      final repo = HierarchyRepository();
+      await repo.init();
       final s = widget.service;
-      final catId = (s.categorys ?? '').toString();
+      final catId = (s.categorys ?? '').toString().trim();
       if (catId.isNotEmpty) {
-        final cats = HierarchyRepository().getCategories();
+        final cats = repo.getCategories();
         final match = cats.firstWhere(
           (c) => c.id == catId,
-          orElse: () => CategoryNode(catId, 'Category $catId'),
+          orElse: () => CategoryNode('', ''),
         );
-        _categoryName = match.name;
-        final subsStr = (s.subcategory ?? '').toString();
+        _categoryName = match.name.isNotEmpty
+            ? match.name
+            : repo.categoryNameFor(catId);
+        final subsStr = (s.subcategory ?? '').toString().trim();
         if (subsStr.isNotEmpty) {
-          final nodes = await HierarchyRepository().getSubcategories(catId);
-          final idList = subsStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-          _subNames = idList.map((id) {
+          final nodes = await repo.getSubcategories(catId);
+          final idList = subsStr
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+          final resolvedNames = <String>[];
+          for (final id in idList) {
             final m = nodes.firstWhere(
               (n) => n.id == id,
-              orElse: () => SubcategoryNode(id, 'Subcategory $id'),
+              orElse: () => SubcategoryNode('', ''),
             );
-            return m.name;
-          }).toList();
+            if (m.name.isNotEmpty) {
+              resolvedNames.add(m.name);
+            } else {
+              final name = repo.subcategoryNameFor(catId, id);
+              if (name != null && name.isNotEmpty) resolvedNames.add(name);
+            }
+          }
+          _subNames = resolvedNames;
         }
         if (mounted) setState(() {});
       }
@@ -833,13 +1394,17 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      color: Colors.white,
+      color: _cardSurface,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppPalette.deepBlue.withAlpha(26)),
+          border: Border.all(color: _borderColor),
           boxShadow: [
-            BoxShadow(color: AppPalette.fusionPurple.withAlpha(14), blurRadius: 12, offset: const Offset(0, 8)),
+            BoxShadow(
+              color: _shadowColor,
+              blurRadius: 12,
+              offset: const Offset(0, 8),
+            ),
           ],
         ),
         child: Padding(padding: const EdgeInsets.all(12), child: child),
@@ -855,7 +1420,9 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     for (int i = 0; i < full; i++) {
       items.add(const Icon(Icons.star, color: Colors.amber, size: 18));
     }
-    if (half) items.add(const Icon(Icons.star_half, color: Colors.amber, size: 18));
+    if (half) {
+      items.add(const Icon(Icons.star_half, color: Colors.amber, size: 18));
+    }
     while (items.length < 5) {
       items.add(const Icon(Icons.star_border, color: Colors.amber, size: 18));
     }
@@ -867,11 +1434,19 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
       children: [
         Expanded(
           child: FilledButton.icon(
-            onPressed: s.number != null && s.number!.isNotEmpty ? () => _openPhone(s.number!) : null,
-            icon: const Icon(Icons.phone),
-            label: Text('Call', style: GoogleFonts.poppins(fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis, softWrap: false, maxLines: 1),
+            onPressed: s.number != null && s.number!.isNotEmpty
+                ? () => _showConnectOptions(s)
+                : null,
+            icon: const Icon(Icons.connect_without_contact),
+            label: Text(
+              'CONNECT NOW',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              maxLines: 1,
+            ),
             style: FilledButton.styleFrom(
-              backgroundColor: AppPalette.fusionPurple,
+              backgroundColor: _brandColor,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               minimumSize: const Size(0, 44),
             ),
@@ -885,24 +1460,16 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
               if (pos != null) _openExternalMap(pos, s);
             },
             icon: const Icon(Icons.directions),
-            label: Text('Directions', style: GoogleFonts.poppins(fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis, softWrap: false, maxLines: 1),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppPalette.fusionPurple,
-              side: BorderSide(color: AppPalette.fusionPurple.withAlpha(120)),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              minimumSize: const Size(0, 44),
+            label: Text(
+              'Directions',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              maxLines: 1,
             ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: s.website != null && s.website!.isNotEmpty ? () => _openWebsite(s.website!) : null,
-            icon: const Icon(Icons.public),
-            label: Text('Website', style: GoogleFonts.poppins(fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis, softWrap: false, maxLines: 1),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppPalette.fusionPurple,
-              side: BorderSide(color: AppPalette.fusionPurple.withAlpha(120)),
+              foregroundColor: _brandColor,
+              side: BorderSide(color: _brandColor.withAlpha(150)),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               minimumSize: const Size(0, 44),
             ),
@@ -912,15 +1479,38 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     );
   }
 
+  Widget _socialButton(IconData icon, String label, VoidCallback onTap) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 16),
+      label: Text(
+        label,
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: _brandColor,
+        side: BorderSide(color: _brandColor.withAlpha(140)),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        minimumSize: const Size(0, 36),
+      ),
+    );
+  }
+
   Widget _bottomActionsBar(Service s) {
     return SafeArea(
       top: false,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: AppPalette.deepBlue.withAlpha(26))),
+          color: _isDarkMode ? const Color(0xFF0A0F15) : Colors.white,
+          border: Border(top: BorderSide(color: _borderColor)),
           boxShadow: [
-            BoxShadow(color: AppPalette.fusionPurple.withAlpha(12), blurRadius: 12, offset: const Offset(0, -4)),
+            BoxShadow(
+              color: _isDarkMode
+                  ? Colors.black.withAlpha(90)
+                  : AppPalette.fusionPurple.withAlpha(12),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
+            ),
           ],
         ),
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),

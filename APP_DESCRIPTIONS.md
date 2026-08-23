@@ -1,100 +1,36 @@
-# ServeKeen - App Store Descriptions
+# ServeKeen Google Play Listing
 
-## Short Description (80 characters)
-```
-Find local services near you. Book trusted vendors for home, business & more.
-```
+Use the text below directly in Google Play Console. Do not paste markdown
+headings, code fences, or labels into the Play listing fields.
 
-## Long Description
+Short description:
+Find and contact trusted local service providers near you.
 
-### Option 1: Simple & Direct
-```
-ServeKeen helps you find and book local services in your area.
+Full description:
+ServeKeen helps customers discover local service providers and contact them from one simple app.
 
-What you can do:
-• Search for services near you using the map
-• Browse categories like home repair, cleaning, tutoring, and more
-• View vendor profiles with photos, prices, and reviews
-• Contact service providers directly through the app
-• Save your favorite services for quick access
-• List your own services if you're a vendor
+Use ServeKeen to search for nearby services, browse categories, view provider details, compare service information, and connect with vendors for home, business, education, health, repairs, transport, events, and other local needs.
 
-How it works:
-1. Open the app and allow location access
-2. Search for what you need (plumber, tutor, cleaner, etc.)
-3. See services on a map or in a list
-4. Tap a service to see details and contact the vendor
-5. Book the service and get the job done
+Customers can:
+• Search for local services by name, category, or location
+• View nearby providers on a map
+• Open service profiles with photos, prices, descriptions, ratings, and contact details
+• Call, message, or visit provider links from the app
+• View brochures, videos, and service information where available
+• Use voice search to find services faster
 
-Why use ServeKeen:
-✓ Find nearby services quickly
-✓ Compare prices and read reviews
-✓ Contact vendors directly
-✓ Simple and easy to use
-✓ Free to download and use
+Service providers can:
+• Create and manage service listings
+• Add business details, photos, prices, availability, and location
+• Help nearby customers discover and contact their business
+• Review profile views and service activity
 
-Download ServeKeen today and find the help you need!
-```
+ServeKeen uses location permission to show services near the user. Camera and photo access are used only when a provider adds images to a service listing. Microphone access is used for voice search.
 
-### Option 2: More Detailed
-```
-Need a plumber? A tutor for your child? Someone to clean your home? 
+ServeKeen is built for people who want a straightforward way to find local help and for vendors who want customers in their area to reach them more easily.
 
-ServeKeen connects you with local service providers in your area. Whether you need help at home, for your business, or personal tasks, we make it easy to find trusted vendors nearby.
+What's new:
+Improved service discovery, map browsing, vendor profiles, voice search, and overall app stability.
 
-FOR CUSTOMERS:
-• Find services near you - See what's available in your neighborhood on Google Maps
-• Browse by category - Home services, education, health, repairs, and more
-• View complete details - Photos, prices, descriptions, and vendor information
-• Voice search - Just speak what you need
-• Save favorites - Keep track of services you like
-• Contact directly - Call or message vendors through the app
-
-FOR VENDORS:
-• List your services - Add your business with photos and details
-• Get discovered - Customers in your area can find you easily
-• Manage your listings - Update prices, descriptions, and availability
-• Track performance - See how many people view your services
-
-FEATURES:
-• Map view shows services around your location
-• Search by name, category, or use voice search
-• View PDF brochures and videos from vendors
-• Clean, simple design that's easy to navigate
-• Works on all Android phones
-
-PERMISSIONS:
-• Location - To show nearby services on the map
-• Camera - To upload photos when listing your service
-• Photos - To select images from your gallery
-• Microphone - For voice search feature
-
-Your privacy matters. We never misuse your information. You can delete your account and data anytime.
-
-Download ServeKeen now and get things done!
-```
-
-### Option 3: Very Short & Punchy (for ads/social)
-```
-Find local services fast.
-
-Search, compare, and book vendors near you. Plumbers, tutors, cleaners, and more - all in one app.
-
-Free download. Easy to use.
-```
-
----
-
-## Keywords for App Store Optimization (ASO)
-```
-local services, find services near me, book services, hire vendors, local business, home services, cleaning service, plumber near me, tutor near me, service marketplace, local help, home repair, maintenance services
-```
-
-## What's New (for updates)
-```
-• Improved map view with better location search
-• Faster service loading
-• Voice search for hands-free finding
-• Better vendor profiles with PDF support
-• Bug fixes and performance improvements
-```
+Keywords:
+local services, service providers, vendors near me, home services, business services, repairs, cleaning, tutoring, local marketplace

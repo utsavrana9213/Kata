@@ -31,6 +31,27 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
   bool _refreshingServices = false;
   int _servicesRequestSerial = 0;
 
+  bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
+  Color get _backgroundColor =>
+      _isDarkMode ? Colors.black : AppPalette.softBlendBackground;
+  Color get _appBarSurface => _isDarkMode ? Colors.black : Colors.white;
+  Color get _cardSurface =>
+      _isDarkMode ? const Color(0xFF121212) : Colors.white;
+  Color get _chipSurface =>
+      _isDarkMode ? const Color(0xFF151F2A) : Colors.white;
+  Color get _mutedSurface =>
+      _isDarkMode ? const Color(0xFF223142) : AppPalette.lightBlueTint;
+  Color get _textPrimary =>
+      _isDarkMode ? const Color(0xFFEAF2FC) : AppPalette.deepBlue;
+  Color get _textSecondary => _isDarkMode
+      ? const Color(0xFFB4C3D5)
+      : AppPalette.deepBlue.withAlpha(150);
+  Color get _brandColor =>
+      _isDarkMode ? const Color(0xFF75AFFF) : AppPalette.fusionPurple;
+  Color get _borderColor => _isDarkMode
+      ? Colors.white.withAlpha(24)
+      : AppPalette.deepBlue.withAlpha(26);
+
   @override
   void initState() {
     super.initState();
@@ -39,7 +60,9 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
 
   Future<void> _init() async {
     await HierarchyRepository().init();
-    final subs = await HierarchyRepository().getSubcategories(widget.categoryId);
+    final subs = await HierarchyRepository().getSubcategories(
+      widget.categoryId,
+    );
     setState(() {
       _subcategories = subs;
       _selectedSubcategoryId = widget.initialSubcategoryId;
@@ -100,14 +123,20 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppPalette.deepBlue);
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+      color: _textPrimary,
+    );
     return Scaffold(
+      backgroundColor: _backgroundColor,
       appBar: AppBar(
         title: Text(widget.categoryName, style: titleStyle),
-        backgroundColor: Colors.white,
-        foregroundColor: AppPalette.deepBlue,
+        backgroundColor: _appBarSurface,
+        foregroundColor: _textPrimary,
         centerTitle: true,
-        elevation: 0.5,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: Column(
         children: [
@@ -126,20 +155,29 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
     final selected = _selectedSubcategoryId;
     final selectedName = selected == null || selected.isEmpty
         ? 'All'
-        : (_subcategories.firstWhere(
-              (s) => s.id == selected,
-              orElse: () => SubcategoryNode(selected, 'Subcategory $selected'),
-            ).name);
+        : (_subcategories
+              .firstWhere(
+                (s) => s.id == selected,
+                orElse: () =>
+                    SubcategoryNode(selected, 'Subcategory $selected'),
+              )
+              .name);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       alignment: Alignment.centerLeft,
-      child: Text('${widget.categoryName} > $selectedName', style: GoogleFonts.poppins(color: AppPalette.deepBlue.withAlpha(150))),
+      child: Text(
+        '${widget.categoryName} > $selectedName',
+        style: GoogleFonts.poppins(color: _textSecondary),
+      ),
     );
   }
 
   Widget _buildSubcategoryFilter() {
     if (_loadingSubs) {
-      return const SizedBox(height: 56, child: Center(child: LinearProgressIndicator()));
+      return const SizedBox(
+        height: 56,
+        child: Center(child: LinearProgressIndicator()),
+      );
     }
     final items = [SubcategoryNode('', 'All'), ..._subcategories];
     return SizedBox(
@@ -156,11 +194,11 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
             onSelected: (_) => _onSubSelected(item.id.isEmpty ? null : item.id),
             selectedColor: AppPalette.fusionPurple,
             labelStyle: GoogleFonts.poppins(
-              color: selected ? Colors.white : AppPalette.deepBlue,
+              color: selected ? Colors.white : _textPrimary,
               fontWeight: FontWeight.w600,
             ),
-            backgroundColor: Colors.white,
-            shape: StadiumBorder(side: BorderSide(color: AppPalette.deepBlue.withAlpha(26))),
+            backgroundColor: _chipSurface,
+            shape: StadiumBorder(side: BorderSide(color: _borderColor)),
           );
         },
         separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -180,7 +218,12 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
           padding: const EdgeInsets.all(12),
           children: [
             const SizedBox(height: 48),
-            Center(child: Text('No services found', style: GoogleFonts.poppins(color: AppPalette.deepBlue.withAlpha(140)))),
+            Center(
+              child: Text(
+                'No services found',
+                style: GoogleFonts.poppins(color: _textSecondary),
+              ),
+            ),
           ],
         ),
       );
@@ -198,74 +241,143 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
             onTap: () async {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ServiceDetailPage(service: s)),
+                MaterialPageRoute(
+                  builder: (_) => ServiceDetailPage(service: s),
+                ),
               );
             },
             child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          elevation: 0,
-          color: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: _ServiceThumb(service: s),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
+              color: _cardSurface,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: _borderColor),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(s.companyName, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: AppPalette.deepBlue)),
-                      const SizedBox(height: 4),
-                      Text(s.serviceName, style: GoogleFonts.poppins(color: AppPalette.deepBlue.withAlpha(160))),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 12,
-                        runSpacing: 6,
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _ServiceThumb(service: s),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (s.locations != null && s.locations!.isNotEmpty)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.place, size: 14, color: AppPalette.fusionPurple),
-                                const SizedBox(width: 4),
-                                Text(s.locations!, style: GoogleFonts.poppins(fontSize: 12, color: AppPalette.deepBlue.withAlpha(150))),
-                              ],
+                          Text(
+                            s.companyName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: _textPrimary,
                             ),
-                          if (s.price != null)
-                            Text('₹${s.price!.toStringAsFixed(0)}', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: AppPalette.fusionPurple)),
-                          if (tier != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: s.isPremium ? AppPalette.elegantPink : AppPalette.lightBlueTint,
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: AppPalette.deepBlue.withAlpha(24)),
-                              ),
-                              child: Text(
-                                tier,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: s.isPremium ? Colors.white : AppPalette.deepBlue,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            s.serviceName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: _textSecondary,
+                              height: 1.25,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              if (s.locations != null &&
+                                  s.locations!.isNotEmpty)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.place,
+                                      size: 13,
+                                      color: _brandColor,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 120,
+                                      ),
+                                      child: Text(
+                                        s.locations!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11,
+                                          color: _textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ),
+                              if (s.price != null && s.price! > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _brandColor.withAlpha(25),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '₹${s.price!.toStringAsFixed(0)}${s.perPrice != null && s.perPrice!.isNotEmpty ? ' / ${s.perPrice}' : ''}',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: _brandColor,
+                                    ),
+                                  ),
+                                ),
+                              if (tier != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: s.isPremium
+                                        ? AppPalette.elegantPink
+                                        : _mutedSurface,
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(color: _borderColor),
+                                  ),
+                                  child: Text(
+                                    tier,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: s.isPremium
+                                          ? Colors.white
+                                          : _textPrimary,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-          ),
-        );
+          );
         },
       ),
     );
@@ -279,6 +391,11 @@ class _ServiceThumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imgPath = service.primaryImageUrl ?? '';
+    final localAsset = service.localAssetImage;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final placeholder = isDark
+        ? const Color(0xFF223142)
+        : AppPalette.lightBlueTint;
     return SizedBox(
       width: 84,
       height: 84,
@@ -289,17 +406,21 @@ class _ServiceThumb extends StatelessWidget {
               errorBuilder: (ctx, err, stack) => Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: AppPalette.lightBlueTint,
+                  color: placeholder,
                 ),
-                child: const Icon(Icons.broken_image, color: Colors.grey),
+                child: localAsset != null
+                    ? Image.asset(localAsset, fit: BoxFit.contain)
+                    : const Icon(Icons.broken_image, color: Colors.grey),
               ),
             )
           : Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: AppPalette.lightBlueTint,
+                color: placeholder,
               ),
-              child: const Icon(Icons.business, color: Colors.grey),
+              child: localAsset != null
+                  ? Image.asset(localAsset, fit: BoxFit.contain)
+                  : const Icon(Icons.business, color: Colors.grey),
             ),
     );
   }
