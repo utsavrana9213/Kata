@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:servekeen/api_service.dart';
 import 'package:servekeen/home_page.dart';
 import 'package:servekeen/login_screen.dart';
-import 'package:servekeen/theme/palette.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -78,9 +77,9 @@ class _SplashScreenState extends State<SplashScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppPalette.fusionPurple,
-              AppPalette.deepBlue,
-              const Color(0xFF0F255F),
+              const Color(0xFF0D7A3E),
+              const Color(0xFF0A5C2E),
+              const Color(0xFF063D1E),
             ],
           ),
         ),
@@ -142,7 +141,8 @@ class _SplashScreenState extends State<SplashScreen>
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Text(
-                      'Your Service Companion',
+                      'Servekeen\nMakes Lives Oriented',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white.withAlpha(204),

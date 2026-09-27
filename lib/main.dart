@@ -52,13 +52,91 @@ class _MyAppState extends State<MyApp> {
         title: 'ServeKeen',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: AppPalette.primaryBlue),
-          scaffoldBackgroundColor: AppPalette.softBlendBackground,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppPalette.primaryBlue,
+            primary: AppPalette.primaryBlue,
+            secondary: AppPalette.primaryGreen,
+            surface: Colors.white,
+          ),
+          scaffoldBackgroundColor: Colors.transparent,
+          fontFamily: 'Roboto',
+          dividerColor: AppPalette.divider,
+          cardTheme: CardThemeData(
+            color: Colors.white,
+            elevation: 0,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: const BorderSide(color: AppPalette.divider),
+            ),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 15,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppPalette.divider),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppPalette.divider),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                color: AppPalette.primaryBlue,
+                width: 1.5,
+              ),
+            ),
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFAFFFFFF),
+            surfaceTintColor: Colors.transparent,
+          ),
           bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            backgroundColor: Colors.white,
+            backgroundColor: Color(0xE6EDF4F5),
             selectedItemColor: AppPalette.primaryBlue,
             unselectedItemColor: Color(0x99204670),
             type: BottomNavigationBarType.fixed,
+          ),
+          filledButtonTheme: FilledButtonThemeData(
+            style: ButtonStyle(
+              elevation: const WidgetStatePropertyAll(0),
+              shadowColor: WidgetStatePropertyAll(
+                AppPalette.primaryBlue.withAlpha(85),
+              ),
+              overlayColor: const WidgetStatePropertyAll(Color(0x38FFFFFF)),
+              shape: WidgetStatePropertyAll(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ButtonStyle(
+              elevation: const WidgetStatePropertyAll(1),
+              shadowColor: WidgetStatePropertyAll(
+                AppPalette.primaryBlue.withAlpha(75),
+              ),
+              overlayColor: const WidgetStatePropertyAll(Color(0x38FFFFFF)),
+              shape: WidgetStatePropertyAll(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+          outlinedButtonTheme: OutlinedButtonThemeData(
+            style: ButtonStyle(
+              backgroundColor: const WidgetStatePropertyAll(Colors.white),
+              elevation: const WidgetStatePropertyAll(0),
+              shadowColor: const WidgetStatePropertyAll(Color(0x33204670)),
+              overlayColor: const WidgetStatePropertyAll(Color(0x302D63B0)),
+              shape: WidgetStatePropertyAll(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
           ),
           useMaterial3: true,
         ),
@@ -68,7 +146,7 @@ class _MyAppState extends State<MyApp> {
             seedColor: AppPalette.primaryBlue,
             brightness: Brightness.dark,
           ),
-          scaffoldBackgroundColor: Colors.black,
+          scaffoldBackgroundColor: Colors.transparent,
           canvasColor: Colors.black,
           cardColor: const Color(0xFF121212),
           dividerColor: Colors.white24,
@@ -109,6 +187,38 @@ class _MyAppState extends State<MyApp> {
           useMaterial3: true,
         ),
         themeMode: mode,
+        builder: (context, child) {
+          final dark = Theme.of(context).brightness == Brightness.dark;
+          return DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: dark
+                    ? const [
+                        Color(0xFF0A1119),
+                        Color(0xFF101A24),
+                        Color(0xFF0B1513),
+                      ]
+                    : const [
+                        Color(0xFFF7FAFE),
+                        Color(0xFFF1F7FD),
+                        Color(0xFFF2FBF7),
+                      ],
+              ),
+              image: dark
+                  ? null
+                  : const DecorationImage(
+                      image: AssetImage(
+                        'assets/images/servekeen_background.png',
+                      ),
+                      fit: BoxFit.cover,
+                      opacity: 0.16,
+                    ),
+            ),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
         home: const SplashScreen(),
       ),
     );

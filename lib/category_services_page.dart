@@ -30,6 +30,41 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
   bool _loadingServices = true;
   bool _refreshingServices = false;
   int _servicesRequestSerial = 0;
+  String _tierFilter = 'All';
+  String _locationFilter = 'All';
+  double _minRating = 0;
+  double? _maxPrice;
+  String _sortBy = 'Recommended';
+
+  int get _activeFilterCount =>
+      (_tierFilter == 'All' ? 0 : 1) +
+      (_locationFilter == 'All' ? 0 : 1) +
+      (_minRating <= 0 ? 0 : 1) +
+      (_maxPrice == null ? 0 : 1) +
+      (_sortBy == 'Recommended' ? 0 : 1) +
+      ((_selectedSubcategoryId ?? '').isEmpty ? 0 : 1);
+
+  List<Service> get _visibleServices {
+    final result = _services.where((service) {
+      if (_tierFilter == 'Premium' && !service.isPremium) return false;
+      if (_tierFilter == 'Standard' && service.isPremium) return false;
+      if (_locationFilter != 'All' &&
+          (service.locations ?? '').trim() != _locationFilter) {
+        return false;
+      }
+      if ((service.avrRat ?? 0) < _minRating) return false;
+      if (_maxPrice != null && (service.price ?? 0) > _maxPrice!) return false;
+      return true;
+    }).toList();
+    if (_sortBy == 'Price: Low to high') {
+      result.sort((a, b) => (a.price ?? 0).compareTo(b.price ?? 0));
+    } else if (_sortBy == 'Price: High to low') {
+      result.sort((a, b) => (b.price ?? 0).compareTo(a.price ?? 0));
+    } else if (_sortBy == 'Top rated') {
+      result.sort((a, b) => (b.avrRat ?? 0).compareTo(a.avrRat ?? 0));
+    }
+    return result;
+  }
 
   bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
   Color get _backgroundColor =>
@@ -37,8 +72,6 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
   Color get _appBarSurface => _isDarkMode ? Colors.black : Colors.white;
   Color get _cardSurface =>
       _isDarkMode ? const Color(0xFF121212) : Colors.white;
-  Color get _chipSurface =>
-      _isDarkMode ? const Color(0xFF151F2A) : Colors.white;
   Color get _mutedSurface =>
       _isDarkMode ? const Color(0xFF223142) : AppPalette.lightBlueTint;
   Color get _textPrimary =>
@@ -113,14 +146,6 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
     });
   }
 
-  void _onSubSelected(String? id) {
-    if (_selectedSubcategoryId == id) return;
-    setState(() {
-      _selectedSubcategoryId = id;
-    });
-    _fetchServices();
-  }
-
   @override
   Widget build(BuildContext context) {
     final titleStyle = GoogleFonts.poppins(
@@ -141,13 +166,321 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
       body: Column(
         children: [
           _buildBreadcrumb(),
-          _buildSubcategoryFilter(),
+          _buildFilterToolbar(),
           if (_refreshingServices) const LinearProgressIndicator(minHeight: 2),
           Expanded(child: _buildServicesList()),
         ],
       ),
     );
   }
+
+  Widget _buildFilterToolbar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '${_visibleServices.length} related services',
+              style: GoogleFonts.poppins(
+                color: _textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: _openFilterSheet,
+            icon: const Icon(Icons.tune_rounded, size: 18),
+            label: Text(
+              _activeFilterCount == 0
+                  ? 'Filters'
+                  : 'Filters ($_activeFilterCount)',
+            ),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openFilterSheet() async {
+    var draftTier = _tierFilter;
+    var draftSubcategory = _selectedSubcategoryId;
+    var draftLocation = _locationFilter;
+    var draftRating = _minRating;
+    var draftMaxPrice = _maxPrice;
+    var draftSort = _sortBy;
+    final locations =
+        _services
+            .map((service) => (service.locations ?? '').trim())
+            .where((location) => location.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+    final highestPrice = _services.fold<double>(0, (highest, service) {
+      final price = service.price ?? 0;
+      return price > highest ? price : highest;
+    });
+    final sliderMax = highestPrice <= 0 ? 1000.0 : highestPrice.ceilToDouble();
+    draftMaxPrice ??= sliderMax;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => DraggableScrollableSheet(
+          initialChildSize: 0.76,
+          minChildSize: 0.5,
+          maxChildSize: 0.94,
+          expand: false,
+          builder: (context, scrollController) => Container(
+            decoration: BoxDecoration(
+              color: _isDarkMode
+                  ? const Color(0xFF151F2A)
+                  : const Color(0xFFF1F6F6),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              border: Border.all(
+                color: _isDarkMode ? Colors.white12 : Colors.white,
+              ),
+              boxShadow: const [
+                BoxShadow(color: Color(0x55204670), blurRadius: 30),
+              ],
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: _textSecondary.withAlpha(90),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 12, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Filter services',
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: _textPrimary,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                    children: [
+                      _filterLabel('Service type'),
+                      DropdownButtonFormField<String>(
+                        value: draftSubcategory ?? '',
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.category_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [SubcategoryNode('', 'All'), ..._subcategories]
+                            .map(
+                              (subcategory) => DropdownMenuItem(
+                                value: subcategory.id,
+                                child: Text(subcategory.name),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _loadingSubs
+                            ? null
+                            : (value) => setSheetState(
+                                () => draftSubcategory = (value ?? '').isEmpty
+                                    ? null
+                                    : value,
+                              ),
+                      ),
+                      const SizedBox(height: 18),
+                      _filterLabel('Membership'),
+                      Wrap(
+                        spacing: 8,
+                        children: ['All', 'Standard', 'Premium'].map((tier) {
+                          return ChoiceChip(
+                            label: Text(tier),
+                            selected: draftTier == tier,
+                            onSelected: (_) =>
+                                setSheetState(() => draftTier = tier),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 18),
+                      _filterLabel('Location'),
+                      DropdownButtonFormField<String>(
+                        value: locations.contains(draftLocation)
+                            ? draftLocation
+                            : 'All',
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.place_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                        items: ['All', ...locations]
+                            .map(
+                              (location) => DropdownMenuItem(
+                                value: location,
+                                child: Text(location),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) =>
+                            setSheetState(() => draftLocation = value ?? 'All'),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(child: _filterLabel('Maximum price')),
+                          Text(
+                            '₹${draftMaxPrice!.round()}',
+                            style: GoogleFonts.poppins(
+                              color: _brandColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Slider(
+                        min: 0,
+                        max: sliderMax,
+                        divisions: 20,
+                        value: draftMaxPrice!.clamp(0, sliderMax),
+                        onChanged: (value) =>
+                            setSheetState(() => draftMaxPrice = value),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(child: _filterLabel('Minimum rating')),
+                          Text(
+                            draftRating == 0
+                                ? 'Any'
+                                : '${draftRating.toStringAsFixed(1)}+ ★',
+                            style: GoogleFonts.poppins(
+                              color: _brandColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Slider(
+                        min: 0,
+                        max: 5,
+                        divisions: 10,
+                        value: draftRating,
+                        onChanged: (value) =>
+                            setSheetState(() => draftRating = value),
+                      ),
+                      const SizedBox(height: 10),
+                      _filterLabel('Sort by'),
+                      DropdownButtonFormField<String>(
+                        value: draftSort,
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.sort_rounded),
+                          border: OutlineInputBorder(),
+                        ),
+                        items:
+                            [
+                                  'Recommended',
+                                  'Top rated',
+                                  'Price: Low to high',
+                                  'Price: High to low',
+                                ]
+                                .map(
+                                  (sort) => DropdownMenuItem(
+                                    value: sort,
+                                    child: Text(sort),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) => setSheetState(
+                          () => draftSort = value ?? 'Recommended',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => setSheetState(() {
+                            draftTier = 'All';
+                            draftSubcategory = null;
+                            draftLocation = 'All';
+                            draftRating = 0;
+                            draftMaxPrice = sliderMax;
+                            draftSort = 'Recommended';
+                          }),
+                          child: const Text('Clear all'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            final subcategoryChanged =
+                                draftSubcategory != _selectedSubcategoryId;
+                            setState(() {
+                              _selectedSubcategoryId = draftSubcategory;
+                              _tierFilter = draftTier;
+                              _locationFilter = draftLocation;
+                              _minRating = draftRating;
+                              _maxPrice = draftMaxPrice! >= sliderMax
+                                  ? null
+                                  : draftMaxPrice;
+                              _sortBy = draftSort;
+                            });
+                            Navigator.pop(sheetContext);
+                            if (subcategoryChanged) _fetchServices();
+                          },
+                          child: const Text('Show results'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _filterLabel(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: GoogleFonts.poppins(
+        fontWeight: FontWeight.w600,
+        color: _textPrimary,
+      ),
+    ),
+  );
 
   // Removed map redirection; service taps open detail page directly
 
@@ -168,41 +501,6 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
       child: Text(
         '${widget.categoryName} > $selectedName',
         style: GoogleFonts.poppins(color: _textSecondary),
-      ),
-    );
-  }
-
-  Widget _buildSubcategoryFilter() {
-    if (_loadingSubs) {
-      return const SizedBox(
-        height: 56,
-        child: Center(child: LinearProgressIndicator()),
-      );
-    }
-    final items = [SubcategoryNode('', 'All'), ..._subcategories];
-    return SizedBox(
-      height: 56,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (context, index) {
-          final item = items[index];
-          final selected = (_selectedSubcategoryId ?? '') == item.id;
-          return ChoiceChip(
-            label: Text(item.name),
-            selected: selected,
-            onSelected: (_) => _onSubSelected(item.id.isEmpty ? null : item.id),
-            selectedColor: AppPalette.fusionPurple,
-            labelStyle: GoogleFonts.poppins(
-              color: selected ? Colors.white : _textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-            backgroundColor: _chipSurface,
-            shape: StadiumBorder(side: BorderSide(color: _borderColor)),
-          );
-        },
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemCount: items.length,
       ),
     );
   }
@@ -228,14 +526,45 @@ class _CategoryServicesPageState extends State<CategoryServicesPage> {
         ),
       );
     }
+    final services = _visibleServices;
+    if (services.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          const SizedBox(height: 48),
+          Icon(Icons.filter_alt_off_rounded, size: 48, color: _textSecondary),
+          const SizedBox(height: 12),
+          Text(
+            'No services match these filters',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(color: _textPrimary),
+          ),
+          TextButton(
+            onPressed: () {
+              final hadSubcategory = _selectedSubcategoryId != null;
+              setState(() {
+                _selectedSubcategoryId = null;
+                _tierFilter = 'All';
+                _locationFilter = 'All';
+                _minRating = 0;
+                _maxPrice = null;
+                _sortBy = 'Recommended';
+              });
+              if (hadSubcategory) _fetchServices();
+            },
+            child: const Text('Clear filters'),
+          ),
+        ],
+      );
+    }
     return RefreshIndicator(
       onRefresh: () => _fetchServices(forceRemote: true),
       child: ListView.separated(
         padding: const EdgeInsets.all(12),
-        itemCount: _services.length,
+        itemCount: services.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final s = _services[index];
+          final s = services[index];
           final tier = s.priceTier;
           return InkWell(
             onTap: () async {

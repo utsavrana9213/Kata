@@ -150,41 +150,43 @@ class _ProfilePageState extends State<ProfilePage>
           right: 16,
           top: 16,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: _textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...fields,
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onSave,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _brandColor,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                'Save Changes',
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                title,
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: _textPrimary,
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 16),
+              ...fields,
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: onSave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _brandColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Save Changes',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -208,8 +210,15 @@ class _ProfilePageState extends State<ProfilePage>
         ),
       ],
       onSave: () async {
+        final mobile = controller.text.trim();
+        if (mobile.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Enter a valid mobile number')),
+          );
+          return;
+        }
         Navigator.pop(context);
-        await _updateProfile({'mobile': controller.text});
+        await _updateProfile({'mobile': mobile});
       },
     );
   }
@@ -284,80 +293,115 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _updateProfile(Map<String, dynamic> data) async {
     setState(() => _isLoading = true);
-    final result = await ApiService().updateProfile(data);
-
-    if (mounted) {
+    try {
+      final result = await ApiService().updateProfile(data);
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      if (result['status'] == 'success') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully!')),
-        );
-        _loadUserData();
-      } else {
+      if (result['status'] != 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? 'Failed to update profile'),
           ),
         );
+        return;
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully')),
+      );
+      await _loadUserData();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not update profile. Try again.')),
+      );
     }
   }
 
-  Widget _buildInfoCard({
-    required IconData icon,
+  Widget _buildProfileSection({
     required String title,
-    required String value,
-    Color? iconColor,
-    bool showEditButton = false,
+    required IconData icon,
+    required List<Widget> children,
     VoidCallback? onEdit,
   }) {
-    final effectiveIconColor = _isDarkMode
-        ? _brandColor
-        : iconColor ?? AppPalette.fusionPurple;
     return Container(
       decoration: BoxDecoration(
         color: _cardSurface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: _shadowColor,
-            blurRadius: 10,
-            offset: const Offset(0, 6),
+            blurRadius: 14,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
+      padding: const EdgeInsets.all(14),
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: (_isDarkMode ? _darkField : effectiveIconColor).withAlpha(
-                _isDarkMode ? 255 : 24,
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _brandColor.withAlpha(_isDarkMode ? 42 : 22),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(icon, size: 19, color: _brandColor),
               ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: effectiveIconColor, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                  ),
+                ),
+              ),
+              if (onEdit != null)
+                TextButton.icon(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text('Edit'),
+                  style: TextButton.styleFrom(foregroundColor: _brandColor),
+                ),
+            ],
           ),
-          const SizedBox(width: 14),
+          const Divider(height: 20),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _profileDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 19, color: _textSecondary),
+          const SizedBox(width: 11),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  label,
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: _textSecondary,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  value,
+                  value.trim().isEmpty ? 'Not provided' : value,
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                     color: _textPrimary,
                   ),
@@ -365,16 +409,6 @@ class _ProfilePageState extends State<ProfilePage>
               ],
             ),
           ),
-          if (showEditButton && onEdit != null)
-            FilledButton.tonalIcon(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit, size: 18),
-              label: const Text('Edit'),
-              style: FilledButton.styleFrom(
-                backgroundColor: _isDarkMode ? _darkField : null,
-                foregroundColor: _brandColor,
-              ),
-            ),
         ],
       ),
     );
@@ -386,26 +420,14 @@ class _ProfilePageState extends State<ProfilePage>
       return const SizedBox.shrink();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return _buildProfileSection(
+      title: 'Business information',
+      icon: Icons.storefront_outlined,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            'Business Information',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: _textPrimary,
-            ),
-          ),
-        ),
-        _buildInfoCard(
-          icon: Icons.business,
-          title: 'Business Name',
-          value: businessName.toString(),
-          iconColor: AppPalette.fusionPurple,
-          showEditButton: false,
+        _profileDetailRow(
+          Icons.business_outlined,
+          'Business name',
+          businessName.toString(),
         ),
       ],
     );
@@ -424,95 +446,31 @@ class _ProfilePageState extends State<ProfilePage>
       pincode,
     ].where((element) => element.toString().isNotEmpty).join(', ');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return _buildProfileSection(
+      title: 'Address',
+      icon: Icons.location_on_outlined,
+      onEdit: _editAddress,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Text(
-                'Address Information',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: _textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (fullAddress.isNotEmpty)
-          _buildInfoCard(
-            icon: Icons.location_on,
-            title: 'Full Address',
-            value: fullAddress,
-            iconColor: AppPalette.fusionPurple,
-            showEditButton: false, // Edit handled by section header
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'No address added yet',
-              style: GoogleFonts.poppins(color: _textSecondary),
-            ),
-          ),
-
-        if (city.toString().isNotEmpty)
-          _buildInfoCard(
-            icon: Icons.location_city,
-            title: 'City',
-            value: city.toString(),
-            iconColor: AppPalette.fusionPurple,
-          ),
-        if (state.toString().isNotEmpty)
-          _buildInfoCard(
-            icon: Icons.map,
-            title: 'State',
-            value: state.toString(),
-            iconColor: AppPalette.fusionPurple,
-          ),
-        if (pincode.toString().isNotEmpty)
-          _buildInfoCard(
-            icon: Icons.pin_drop,
-            title: 'Pincode',
-            value: pincode.toString(),
-            iconColor: AppPalette.fusionPurple,
-          ),
+        _profileDetailRow(Icons.home_outlined, 'Saved address', fullAddress),
       ],
     );
   }
 
   Widget _buildContactInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return _buildProfileSection(
+      title: 'Contact information',
+      icon: Icons.contact_page_outlined,
+      onEdit: _editMobile,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            'Contact Information',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: _textPrimary,
-            ),
-          ),
+        _profileDetailRow(
+          Icons.email_outlined,
+          'Email address',
+          (_currentUser?['email'] ?? '').toString(),
         ),
-        _buildInfoCard(
-          icon: Icons.email,
-          title: 'Email Address',
-          value: _currentUser?['email'] ?? 'Not provided',
-          iconColor: AppPalette.fusionPurple,
-          showEditButton: false, // Email usually not editable
-        ),
-        _buildInfoCard(
-          icon: Icons.phone,
-          title: 'Mobile Number',
-          value: _currentUser?['mobile']?.toString() ?? 'Not provided',
-          iconColor: AppPalette.fusionPurple,
-          showEditButton: false,
+        _profileDetailRow(
+          Icons.phone_outlined,
+          'Mobile number',
+          (_currentUser?['mobile'] ?? '').toString(),
         ),
       ],
     );
@@ -586,127 +544,133 @@ class _ProfilePageState extends State<ProfilePage>
 
     return Scaffold(
       backgroundColor: _pageBackground,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: false,
-            pinned: true,
-            backgroundColor: _isDarkMode ? _darkSurface : Colors.white,
-            foregroundColor: _textPrimary,
-            surfaceTintColor: Colors.transparent,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: _headerGradientColors,
-                  ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundColor: _fieldSurface,
-                            child: Text(
-                              _currentUser!['name'][0].toUpperCase(),
-                              style: GoogleFonts.poppins(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: _brandColor,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _currentUser!['name'],
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: _textPrimary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  (_currentUser!['email'] ?? '').toString(),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: _textSecondary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          FilledButton.tonalIcon(
-                            onPressed: _openQuickEdit,
-                            icon: const Icon(Icons.edit, size: 18),
-                            label: const Text('Edit'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: _isDarkMode
-                                  ? _darkField
-                                  : Colors.white.withAlpha(220),
-                              foregroundColor: _brandColor,
-                            ),
-                          ),
-                        ],
-                      ),
+      body: RefreshIndicator(
+        color: _brandColor,
+        backgroundColor: _cardSurface,
+        onRefresh: _loadUserData,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 120,
+              floating: false,
+              pinned: true,
+              backgroundColor: _isDarkMode ? _darkSurface : Colors.white,
+              foregroundColor: _textPrimary,
+              surfaceTintColor: Colors.transparent,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: _headerGradientColors,
                     ),
                   ),
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _buildContactInfo(),
-                    const SizedBox(height: 24),
-                    _buildAddressInfo(),
-                    const SizedBox(height: 24),
-                    _buildBusinessInfo(),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _signOut,
-                        icon: const Icon(Icons.logout),
-                        label: const Text('Sign Out'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: BorderSide(color: Colors.red.shade300),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 28,
+                              backgroundColor: _fieldSurface,
+                              child: Text(
+                                _currentUser!['name'][0].toUpperCase(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: _brandColor,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _currentUser!['name'],
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: _textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    (_currentUser!['email'] ?? '').toString(),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: _textSecondary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.tonalIcon(
+                              onPressed: _openQuickEdit,
+                              icon: const Icon(Icons.edit, size: 18),
+                              label: const Text('Edit'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _isDarkMode
+                                    ? _darkField
+                                    : Colors.white.withAlpha(220),
+                                foregroundColor: _brandColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+            SliverToBoxAdapter(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      _buildContactInfo(),
+                      const SizedBox(height: 14),
+                      _buildAddressInfo(),
+                      const SizedBox(height: 14),
+                      _buildBusinessInfo(),
+                      const SizedBox(height: 22),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _signOut,
+                          icon: const Icon(Icons.logout),
+                          label: const Text('Sign Out'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: BorderSide(color: Colors.red.shade300),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -797,8 +761,15 @@ class _ProfilePageState extends State<ProfilePage>
             const SizedBox(height: 12),
             FilledButton(
               onPressed: () async {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Name cannot be empty')),
+                  );
+                  return;
+                }
                 Navigator.pop(ctx);
-                await _updateProfile({'name': nameCtrl.text});
+                await _updateProfile({'name': name});
               },
               style: FilledButton.styleFrom(backgroundColor: _brandColor),
               child: const Text('Save'),

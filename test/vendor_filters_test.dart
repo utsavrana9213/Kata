@@ -43,4 +43,39 @@ void main() {
     );
     expect(result.single.serviceName, 'Roadside repair');
   });
+
+  test('chat-style car query matches automotive category across all tiers', () {
+    final all = [
+      service('Wheel Care', category: '4', tier: 'premium'),
+      service('Bridal styling', category: '6', tier: 'standard'),
+    ];
+    final result = rankRelevantServicesAllTiers(
+      all,
+      'show me car services',
+      categoryNames: const {'4': 'Automotive', '6': 'Spa & Salons'},
+    );
+    expect(result.map((item) => item.serviceName), ['Wheel Care']);
+  });
+
+  test('multi-word chat query requires every meaningful concept', () {
+    final chennaiRental = Service(
+      id: 'rental',
+      companyName: 'City Cars',
+      serviceName: 'Car rental',
+      locations: 'Chennai',
+      membershipTier: 'standard',
+    );
+    final otherCity = Service(
+      id: 'other',
+      companyName: 'Travel Cars',
+      serviceName: 'Car rental',
+      locations: 'Mumbai',
+      membershipTier: 'standard',
+    );
+    final result = rankRelevantServicesAllTiers([
+      chennaiRental,
+      otherCity,
+    ], 'I need car rental in Chennai');
+    expect(result.single.id, 'rental');
+  });
 }

@@ -4,33 +4,26 @@ Use the text below directly in Google Play Console. Do not paste markdown
 headings, code fences, or labels into the Play listing fields.
 
 Short description:
-Find and contact trusted local service providers near you.
+Discover nearby services and contact providers from one place.
 
 Full description:
-ServeKeen helps customers discover local service providers and contact them from one simple app.
+ServeKeen helps you find services available in your area and contact the provider from one app.
 
-Use ServeKeen to search for nearby services, browse categories, view provider details, compare service information, and connect with vendors for home, business, education, health, repairs, transport, events, and other local needs.
+Browse categories or search by service name and location. Each listing can include a description, photos, pricing, availability, ratings, contact details, and a map location, depending on the information supplied by the provider.
 
-Customers can:
-• Search for local services by name, category, or location
-• View nearby providers on a map
-• Open service profiles with photos, prices, descriptions, ratings, and contact details
-• Call, message, or visit provider links from the app
-• View brochures, videos, and service information where available
-• Use voice search to find services faster
+With ServeKeen, you can:
+• Search by service name, category, or location
+• Browse listings near you on a map
+• View service details, photos, prices, ratings, and availability
+• Call or message a provider using the contact information in their listing
+• Open provider websites, brochures, and videos when available
+• Use voice input when searching
 
-Service providers can:
-• Create and manage service listings
-• Add business details, photos, prices, availability, and location
-• Help nearby customers discover and contact their business
-• Review profile views and service activity
+Providers can create and manage their listings, add service information and images, set their location and availability, and view listing activity.
 
-ServeKeen uses location permission to show services near the user. Camera and photo access are used only when a provider adds images to a service listing. Microphone access is used for voice search.
+Location access is used to show relevant services nearby. Camera or photo access is used when a provider chooses images for a listing. Microphone access is used when a user chooses voice input for search.
 
-ServeKeen is built for people who want a straightforward way to find local help and for vendors who want customers in their area to reach them more easily.
+The availability and details of each service are provided by its individual provider. Contact the provider directly to confirm pricing, timing, and other requirements.
 
 What's new:
 Improved service discovery, map browsing, vendor profiles, voice search, and overall app stability.
-
-Keywords:
-local services, service providers, vendors near me, home services, business services, repairs, cleaning, tutoring, local marketplace

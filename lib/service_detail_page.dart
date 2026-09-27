@@ -9,6 +9,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:servekeen/data/hierarchy_repository.dart';
 import 'package:servekeen/api_service.dart';
+import 'package:servekeen/login_screen.dart';
 import 'package:servekeen/theme/palette.dart';
 import 'package:servekeen/widgets/dot_grid_painter.dart';
 
@@ -77,7 +78,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     _resolveCategoryAndSubs();
     ApiService().trackServiceEvent(widget.service.id, 'view_details');
     _avgRating = widget.service.avrRat;
-    _ratingStatusText = 'Tap a star to rate';
+    _ratingStatusText = null;
     final u = ApiService().currentUser;
     final name = (u?['name'] ?? u?['username'] ?? u?['full_name'] ?? '')
         .toString()
@@ -146,13 +147,6 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
         if (u.isNotEmpty && u == nameGuess) return r;
       }
     }
-    final my = _myRating ?? 0;
-    if (my > 0) {
-      for (final r in reviews) {
-        final rating = _toInt(r['rating'] ?? r['stars']) ?? 0;
-        if (rating == my) return r;
-      }
-    }
     return null;
   }
 
@@ -204,22 +198,14 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
           _myRating = nextMyRating;
           _serviceReviews = parsedReviews;
           _myReview = _findMyReview(parsedReviews);
-          final myText =
-              (_myReview?['review_text'] ??
-                      _myReview?['reviewText'] ??
-                      _myReview?['description'] ??
-                      _myReview?['review'] ??
-                      '')
-                  .toString()
-                  .trim();
           if (ApiService().isLoggedIn && (nextMyRating ?? 0) > 0) {
-            _showReviewForm = myText.isEmpty;
+            _showReviewForm = false;
           } else {
             _showReviewForm = true;
           }
           _loadingRating = false;
           if (!keepStatusText) {
-            _ratingStatusText = 'Tap a star to rate';
+            _ratingStatusText = null;
             _ratingStatusIsError = false;
           } else {
             _ratingStatusText = prevText;
@@ -325,9 +311,8 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
         _submittingRating = false;
         _ratingStatusText = 'Thanks for rating!';
         _ratingStatusIsError = false;
-        _showReviewForm = reviewText.isEmpty;
+        _showReviewForm = false;
       });
-      _ratingReviewController.clear();
       await _loadRating(keepStatusText: true);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -391,16 +376,19 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
       backgroundColor: _backgroundColor,
       appBar: AppBar(
         title: Text(
-          s.serviceName,
+          'Service details',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700,
             color: _textPrimary,
           ),
         ),
-        backgroundColor: _appBarSurface,
+        backgroundColor: _isDarkMode ? _appBarSurface : const Color(0xE8EEF4F5),
         foregroundColor: _textPrimary,
         centerTitle: true,
-        elevation: 0,
+        elevation: 8,
+        shadowColor: _isDarkMode
+            ? Colors.black54
+            : AppPalette.deepBlue.withAlpha(35),
         scrolledUnderElevation: 0,
       ),
       body: Stack(
@@ -431,25 +419,38 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
             children: [
               _buildImages(),
               const SizedBox(height: 12),
-              _buildHeader(s, priceStr),
+              _buildHeader(s, priceStr, avg),
               const SizedBox(height: 12),
-              _buildChips(s),
-              const SizedBox(height: 12),
-              _buildSectionTitle('Description'),
+              _buildSectionTitle(Icons.notes_rounded, 'About this service'),
               _buildCard(
                 Text(
                   (s.description ?? s.shortDescription ?? 'No description')
                       .toString(),
-                  style: GoogleFonts.poppins(color: _textPrimary),
+                  style: GoogleFonts.poppins(
+                    color: _textPrimary,
+                    height: 1.55,
+                    fontSize: 13,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
-              _buildSectionTitle('Location'),
+              _buildSectionTitle(
+                Icons.location_on_outlined,
+                'Service location',
+              ),
               _buildCard(
                 Row(
                   children: [
-                    Icon(Icons.place, color: _brandColor),
-                    const SizedBox(width: 8),
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: _brandColor.withAlpha(22),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Icon(Icons.place_rounded, color: _brandColor),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         s.address ?? s.locations ?? 'Not available',
@@ -460,7 +461,10 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildSectionTitle('Rating & Stats'),
+              _buildSectionTitle(
+                Icons.star_outline_rounded,
+                'Rating and reviews',
+              ),
               _buildCard(
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,7 +491,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                         const Spacer(),
                         if (s.viewsCont != null)
                           Text(
-                            'Views: ${s.viewsCont}',
+                            '${s.viewsCont} views',
                             style: GoogleFonts.poppins(color: _textSecondary),
                           ),
                       ],
@@ -501,10 +505,13 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildSectionTitle('Reviews'),
+              _buildSectionTitle(Icons.forum_outlined, 'Customer reviews'),
               _buildCard(_buildReviews()),
               const SizedBox(height: 12),
-              _buildSectionTitle('Business Info'),
+              _buildSectionTitle(
+                Icons.storefront_outlined,
+                'Provider information',
+              ),
               _buildCard(
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,7 +622,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                 ),
               ),
               const SizedBox(height: 12),
-              _buildSectionTitle('Map'),
+              _buildSectionTitle(Icons.map_outlined, 'Map and directions'),
               _buildCard(
                 derived != null
                     ? SizedBox(height: 220, child: _buildMapOnly(derived, s))
@@ -635,48 +642,132 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
 
   Widget _buildRatingInput() {
     final selected = _myRating;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(5, (index) {
-        final v = index + 1;
-        final active = selected != null && v <= selected;
-        return InkWell(
-          onTap: _submittingRating
-              ? null
-              : () {
-                  setState(() => _myRating = v);
-                },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: Icon(
-              active ? Icons.star : Icons.star_border,
-              size: 24,
-              color: active ? Colors.amber : Colors.grey,
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(5, (index) {
+            final v = index + 1;
+            final active = selected != null && v <= selected;
+            return Semantics(
+              button: true,
+              selected: selected == v,
+              label: '$v ${v == 1 ? 'star' : 'stars'}',
+              child: InkWell(
+                onTap: _submittingRating
+                    ? null
+                    : () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _myRating = v;
+                          _ratingStatusText = null;
+                          _ratingStatusIsError = false;
+                        });
+                      },
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Icon(
+                    active ? Icons.star_rounded : Icons.star_outline_rounded,
+                    size: 35,
+                    color: active ? const Color(0xFFFFB300) : _textSecondary,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 4),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: Text(
+            selected == null ? 'Tap a star to rate' : _ratingLabel(selected),
+            key: ValueKey(selected),
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: selected == null ? _textSecondary : _brandColor,
             ),
           ),
-        );
-      }),
+        ),
+      ],
     );
   }
 
+  String _ratingLabel(int rating) {
+    return const {
+          1: 'Poor',
+          2: 'Fair',
+          3: 'Good',
+          4: 'Very good',
+          5: 'Excellent',
+        }[rating] ??
+        '';
+  }
+
   Widget _buildReviewForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    if (!ApiService().isLoggedIn) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: _fieldSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _borderColor),
+        ),
+        child: Column(
           children: [
+            Icon(Icons.rate_review_outlined, color: _brandColor, size: 30),
+            const SizedBox(height: 8),
             Text(
-              'Your rating',
+              'Share your experience',
               style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 color: _textPrimary,
               ),
             ),
-            const Spacer(),
-            _buildRatingInput(),
+            const SizedBox(height: 3),
+            Text(
+              'Sign in to rate this service and write a review.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 12, color: _textSecondary),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+                if (!mounted) return;
+                final user = ApiService().currentUser;
+                final name = (user?['name'] ?? user?['username'] ?? '')
+                    .toString()
+                    .trim();
+                if (name.isNotEmpty) _ratingNameController.text = name;
+                await _loadRating();
+              },
+              icon: const Icon(Icons.login_rounded),
+              label: const Text('Sign in to rate'),
+            ),
           ],
         ),
-        const SizedBox(height: 12),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _hasMyRating ? 'Update your rating' : 'How was this service?',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            color: _textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildRatingInput(),
+        const SizedBox(height: 14),
         Text(
           'Your name',
           style: GoogleFonts.poppins(
@@ -689,7 +780,8 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
           controller: _ratingNameController,
           style: GoogleFonts.poppins(color: _textPrimary),
           decoration: InputDecoration(
-            hintText: 'Name',
+            hintText: 'Enter your name',
+            prefixIcon: const Icon(Icons.person_outline_rounded),
             filled: true,
             fillColor: _fieldSurface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -702,7 +794,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Description (max 100 words)',
+          'Review (optional)',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             color: _textPrimary,
@@ -714,7 +806,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
           maxLines: 3,
           style: GoogleFonts.poppins(color: _textPrimary),
           decoration: InputDecoration(
-            hintText: 'Write your review...',
+            hintText: 'What did you like? What could be better?',
             filled: true,
             fillColor: _fieldSurface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -737,19 +829,34 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            const Spacer(),
-            FilledButton(
-              onPressed: (_loadingRating || _submittingRating)
-                  ? null
-                  : _submitRating,
-              child: Text(
-                'Submit',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-              ),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: FilledButton.icon(
+            onPressed:
+                (_loadingRating ||
+                    _submittingRating ||
+                    (_myRating ?? 0) == 0 ||
+                    _ratingReviewWords > 100)
+                ? null
+                : _submitRating,
+            icon: _submittingRating
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.send_rounded, size: 18),
+            label: Text(
+              _submittingRating
+                  ? 'Submitting…'
+                  : (_hasMyRating ? 'Update rating' : 'Submit rating'),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
             ),
-          ],
+          ),
         ),
         if ((_ratingStatusText ?? '').trim().isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -764,7 +871,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
             ),
           ),
         ],
-        if (_loadingRating || _submittingRating) ...[
+        if (_loadingRating && !_submittingRating) ...[
           const SizedBox(height: 10),
           const LinearProgressIndicator(minHeight: 2),
         ],
@@ -927,7 +1034,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
       );
     }
     return SizedBox(
-      height: 220,
+      height: 250,
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
@@ -964,6 +1071,37 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
             },
           ),
           Positioned(
+            top: 10,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black.withAlpha(125),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.photo_library_outlined,
+                    size: 13,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '${_imageIndex + 1}/${images.length}',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
             bottom: 8,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -990,52 +1128,144 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     );
   }
 
-  Widget _buildHeader(Service s, String priceStr) {
+  Widget _buildHeader(Service s, String priceStr, double? rating) {
     final priceLabel =
         priceStr +
         (s.perPrice != null && s.perPrice!.isNotEmpty
             ? ' / ${s.perPrice}'
             : '');
     return _buildCard(
-      Row(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s.serviceName,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: _textPrimary,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.serviceName,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                        height: 1.2,
+                        color: _textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      s.companyName,
+                      style: GoogleFonts.poppins(
+                        color: _textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (s.priceTier != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: s.isPremium
+                        ? AppPalette.primaryGreen
+                        : _mutedSurface,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: _borderColor),
+                  ),
+                  child: Text(
+                    s.priceTier!,
+                    style: GoogleFonts.poppins(
+                      color: s.isPremium ? Colors.white : _textPrimary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  s.companyName,
-                  style: GoogleFonts.poppins(color: _textSecondary),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: _isDarkMode
+                  ? null
+                  : const LinearGradient(
+                      colors: [Color(0xFFEAF3FF), Color(0xFFE7F3ED)],
+                    ),
+              color: _isDarkMode ? _mutedSurface : null,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _borderColor),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.payments_outlined, color: _brandColor, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Starting price',
+                        style: GoogleFonts.poppins(
+                          color: _textSecondary,
+                          fontSize: 10,
+                        ),
+                      ),
+                      Text(
+                        priceLabel,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w800,
+                          color: _brandColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                if (rating != null) ...[
+                  Container(width: 1, height: 34, color: _borderColor),
+                  const SizedBox(width: 12),
+                  const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                  const SizedBox(width: 4),
+                  Text(
+                    rating.toStringAsFixed(1),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      color: _textPrimary,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: _mutedSurface,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: _borderColor),
+          if ((s.locations ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.location_on_outlined, color: _brandColor, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    s.locations!.trim(),
+                    style: GoogleFonts.poppins(
+                      color: _textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            child: Text(
-              priceLabel,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w700,
-                color: _brandColor,
-                fontSize: 12,
-              ),
-            ),
-          ),
+          ],
+          const SizedBox(height: 10),
+          _buildChips(s),
         ],
       ),
     );
@@ -1337,12 +1567,30 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     return Wrap(spacing: 8, runSpacing: 8, children: children);
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-        fontWeight: FontWeight.w700,
-        color: _textPrimary,
+  Widget _buildSectionTitle(IconData icon, String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 2, 2, 6),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: _brandColor.withAlpha(22),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 17, color: _brandColor),
+          ),
+          const SizedBox(width: 9),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: _textPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1394,9 +1642,17 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      color: _cardSurface,
+      color: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
+          gradient: _isDarkMode
+              ? null
+              : const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xF7FFFFFF), Color(0xE4EAF2F3)],
+                ),
+          color: _isDarkMode ? _cardSurface : null,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: _borderColor),
           boxShadow: [
@@ -1439,7 +1695,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                 : null,
             icon: const Icon(Icons.connect_without_contact),
             label: Text(
-              'CONNECT NOW',
+              'Contact provider',
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
               overflow: TextOverflow.ellipsis,
               softWrap: false,
@@ -1455,10 +1711,9 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
         const SizedBox(width: 8),
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: () {
-              final pos = _deriveLatLng(s);
-              if (pos != null) _openExternalMap(pos, s);
-            },
+            onPressed: _deriveLatLng(s) == null
+                ? null
+                : () => _openExternalMap(_deriveLatLng(s)!, s),
             icon: const Icon(Icons.directions),
             label: Text(
               'Directions',
@@ -1501,15 +1756,22 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
       top: false,
       child: Container(
         decoration: BoxDecoration(
-          color: _isDarkMode ? const Color(0xFF0A0F15) : Colors.white,
+          gradient: _isDarkMode
+              ? null
+              : const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFAFFFFFF), Color(0xE8DDE9EE)],
+                ),
+          color: _isDarkMode ? const Color(0xFF0A0F15) : null,
           border: Border(top: BorderSide(color: _borderColor)),
           boxShadow: [
             BoxShadow(
               color: _isDarkMode
                   ? Colors.black.withAlpha(90)
                   : AppPalette.fusionPurple.withAlpha(12),
-              blurRadius: 12,
-              offset: const Offset(0, -4),
+              blurRadius: 22,
+              offset: const Offset(0, -6),
             ),
           ],
         ),
